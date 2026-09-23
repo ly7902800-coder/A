@@ -15,6 +15,8 @@ jobs:
         with:
           flutter-version: "3.35.0"
           channel: stable
+      - name: Generate supported Android project
+        run: cd apps/mobile && flutter create --platforms=android --project-name genesis_ai --org com.genesisai .
       - name: Dependencies
         run: cd apps/mobile && flutter pub get
       - name: Analyze
