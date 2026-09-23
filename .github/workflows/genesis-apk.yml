@@ -3,58 +3,78 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "apps/mobile/**"
-      - ".github/workflows/genesis-apk.yml"
+      - apps/mobile/**
+      - .github/workflows/genesis-apk.yml
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.35.0"
           channel: stable
-      - name: Generate supported Android project
-        run: cd apps/mobile && flutter create --platforms=android --project-name genesis_ai --org com.genesisai .
+
+      - name: Generate Android project
+        working-directory: apps/mobile
+        run: flutter create --platforms=android --project-name genesis_ai --org com.genesisai .
+
       - name: Apply Genesis AI branding
         working-directory: apps/mobile
+        shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("android/app/src/main/AndroidManifest.xml")
-          s=p.read_text()
-          s=s.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/genesis_icon"')
-          p.write_text(s)
-          PY
           mkdir -p android/app/src/main/res/drawable
-          cat > android/app/src/main/res/drawable/genesis_icon.xml <<'XML'
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="512" android:viewportHeight="512">
-<path android:fillColor="#080808" android:pathData="M112,0L400,0Q512,0 512,112L512,400Q512,512 400,512L112,512Q0,512 0,400L0,112Q0,0 112,0Z"/>
-<path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M256,97C264,97 271,102 274,111L296,198L387,225C396,228 401,235 401,244C401,253 396,260 387,263L296,290L274,401C271,410 264,415 256,415C248,415 241,410 238,401L216,290L125,263C116,260 111,253 111,244C111,235 116,228 125,225L216,198L238,111C241,102 248,97 256,97Z"/>
-<path android:fillColor="#9CA3AF" android:pathData="M392,218A18,18 0,1 0,392 254A18,18 0,1 0,392 218"/>
-<path android:fillColor="#9CA3AF" android:pathData="M120,224A12,12 0,1 0,120 248A12,12 0,1 0,120 224"/>
-</vector>
-XML
           python3 - <<'PY'
           from pathlib import Path
-          p=Path("android/app/src/main/res/values/strings.xml")
-          s=p.read_text()
           import re
-          s=re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">Genesis AI</string>', s)
-          p.write_text(s)
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          text = text.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/genesis_icon"')
+          manifest.write_text(text)
+          strings = Path("android/app/src/main/res/values/strings.xml")
+          text = strings.read_text()
+          text = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">Genesis AI</string>', text)
+          strings.write_text(text)
+          Path("android/app/src/main/res/drawable/genesis_icon.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#080808" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M54,15l7,28 28,11 -28,11 -7,28 -7,-28 -28,-11 28,-11z"/>
+    <path android:fillColor="#9CA3AF" android:pathData="M88,13h7v7h-7z"/>
+    <path android:fillColor="#9CA3AF" android:pathData="M13,88h5v5h-5z"/>
+</vector>
+""")
           PY
+
       - name: Dependencies
-        run: cd apps/mobile && flutter pub get
+        working-directory: apps/mobile
+        run: flutter pub get
+
       - name: Analyze
-        run: cd apps/mobile && flutter analyze
+        working-directory: apps/mobile
+        run: flutter analyze
+
       - name: Test
-        run: cd apps/mobile && flutter test
+        working-directory: apps/mobile
+        run: flutter test
+
       - name: Build APK
-        run: cd apps/mobile && flutter build apk --release
+        working-directory: apps/mobile
+        run: flutter build apk --release
+
       - name: Build AAB
-        run: cd apps/mobile && flutter build appbundle --release
-      - uses: actions/upload-artifact@v4
+        working-directory: apps/mobile
+        run: flutter build appbundle --release
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: genesis-android-release
           path: |
