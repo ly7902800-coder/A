@@ -6,7 +6,7 @@ type Discovered = ModelDescriptor & { source:"live"|"registry"; available:boolea
 
 const caps=(id:string):string[]=>{const s=id.toLowerCase(),c=["chat"];if(/vision|gemini|gpt-4o|claude-3|qwen-vl|llama-4/.test(s))c.push("vision");if(/reason|thinking|o[1-9]|gpt-5|claude|gemini-2\.5|gemini-3/.test(s))c.push("reasoning");if(/code|coder|devstral|codestral|qwen/.test(s))c.push("coding");return c;};
 async function getJson(url:string,headers:Record<string,string>={}){const r=await fetch(url,{headers:{Accept:"application/json",...headers}});if(!r.ok)throw new Error(`${r.status} ${await r.text().then(x=>x.slice(0,300))}`);return r.json() as Promise<any>;}
-function auth(p:ProviderName){const k=getSecretForProvider(p);return k?{Authorization:`Bearer ${k}`}:{};}
+function auth(p:ProviderName):Record<string,string>{const k=getSecretForProvider(p);const headers:Record<string,string>={};if(k)headers.Authorization="Bearer "+k;return headers;}
 
 async function discoverOpenRouter():Promise<ModelDescriptor[]>{
  const d=await getJson("https://openrouter.ai/api/v1/models",auth("openrouter"));return (d.data??[]).map((m:any)=>({id:`openrouter/${m.id}`,provider:"openrouter" as const,name:m.name??m.id,capabilities:caps(m.id)}));
