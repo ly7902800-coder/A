@@ -68,7 +68,11 @@ const defs: IntegrationDefinition[] = [
   {id:"luma",auth:"api_key",env:["LUMA_API_KEY"],capabilities:["video","image","3d"],status:"credential_required"},
   {id:"kling",auth:"api_key",env:["KLING_API_KEY"],capabilities:["video","image"],status:"credential_required"},
   {id:"playht",auth:"api_key",env:["PLAYHT_API_KEY"],capabilities:["tts","voice"],status:"credential_required"},
-  {id:"suno",auth:"api_key",env:["SUNO_API_KEY"],capabilities:["music_generation"],status:"credential_required"}
+  {id:"suno",auth:"api_key",env:["SUNO_API_KEY"],capabilities:["music_generation"],status:"credential_required"},
+  {id:"okara",auth:"api_key",env:["OKARA_API_KEY","OKARA_BASE_URL"],capabilities:["ai_cmo","seo","geo","content","marketing_agents"],status:"credential_required"},
+  {id:"gsc-mcp",auth:"oauth",env:["GSC_CREDENTIALS_PATH"],capabilities:["search_console","search_analytics","url_inspection","sitemaps"],status:"credential_required"},
+  {id:"openseo",auth:"oauth",env:["OPENSEO_MCP_URL"],capabilities:["keyword_research","serp","backlinks","rank_tracking","site_audit","gsc","ai_visibility"],status:"credential_required"},
+  {id:"geo-optimizer",auth:"none",capabilities:["geo_audit","ai_visibility","llms_txt","schema","robots_audit","mcp","content_optimization"],status:"catalog_only"}
 ];
 
 export function listIntegrations() { return defs; }
