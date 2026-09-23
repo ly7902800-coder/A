@@ -1,5 +1,7 @@
 name: Genesis Agent Checks
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       task:
