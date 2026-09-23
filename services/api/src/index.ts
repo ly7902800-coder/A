@@ -50,6 +50,8 @@ const server=createServer(async(request,response)=>{
   const chatMatch=url.pathname.match(/^\/v1\/chats\/([^/]+)$/);
   if(chatMatch&&request.method==="GET"){const user=await requireAuth(request);return sendJson(response,200,await getChatMessages(user.id,chatMatch[1]));}
   if(url.pathname==="/v1/providers"&&request.method==="GET")return sendJson(response,200,{providers:gateway.listProviders()});
+  if(url.pathname==="/v1/capabilities"&&request.method==="GET"){const live=await gateway.discoverModels();return sendJson(response,200,{providers:gateway.listProviders(),models:{registry:gateway.listModels(),live:live.models,providerStatus:live.providers},tools:gateway.listTools(),features:(await import("@genesis-ai/ai-gateway/feature-registry")).GENESIS_FEATURES,platforms:gateway.listPlatformTargets(),connectors:[...gateway.listOAuthPlatforms(),...gateway.listConnectors()]});}
+  if(url.pathname==="/v1/models/catalog"&&request.method==="GET"){const live=await gateway.discoverModels();const merged=[...gateway.listModels(),...live.models.filter((m:any)=>!gateway.listModels().some((r:any)=>r.id===m.id))];return sendJson(response,200,{models:merged,providers:live.providers});}
   if(url.pathname==="/v1/models"&&request.method==="GET")return sendJson(response,200,{models:gateway.listModels()});
   if(url.pathname==="/v1/models/live"&&request.method==="GET")return sendJson(response,200,await gateway.discoverModels());
   if(url.pathname==="/v1/tools"&&request.method==="GET")return sendJson(response,200,{tools:gateway.listTools()});
