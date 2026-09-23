@@ -5,7 +5,7 @@ import {mkdir,rm,readdir,stat} from "node:fs/promises";
 import {existsSync} from "node:fs";
 import {join} from "node:path";
 import {tmpdir} from "node:os";
-import Redis from "ioredis";
+import {Redis} from "ioredis";
 import {getRecipe,BuildTarget} from "./recipes.js";
 
 const port=Number(process.env.PORT??8090);
