@@ -1,9 +1,10 @@
-import { getProviderConfig, getSecretForProvider, type ProviderName } from "./providers.js";
+import { getProviderConfig, getSecretForProvider } from "./providers.js";
+import type { ProviderName } from "./types.js";
 import type { ModelDescriptor } from "./types.js";
 
 type Discovered = ModelDescriptor & { source:"live"|"registry"; available:boolean };
 
-const caps=(id:string)=>{const s=id.toLowerCase(),c=["chat"];if(/vision|gemini|gpt-4o|claude-3|qwen-vl|llama-4/.test(s))c.push("vision");if(/reason|thinking|o[1-9]|gpt-5|claude|gemini-2\.5|gemini-3/.test(s))c.push("reasoning");if(/code|coder|devstral|codestral|qwen/.test(s))c.push("coding");return c;};
+const caps=(id:string):string[]=>{const s=id.toLowerCase(),c=["chat"];if(/vision|gemini|gpt-4o|claude-3|qwen-vl|llama-4/.test(s))c.push("vision");if(/reason|thinking|o[1-9]|gpt-5|claude|gemini-2\.5|gemini-3/.test(s))c.push("reasoning");if(/code|coder|devstral|codestral|qwen/.test(s))c.push("coding");return c;};
 async function getJson(url:string,headers:Record<string,string>={}){const r=await fetch(url,{headers:{Accept:"application/json",...headers}});if(!r.ok)throw new Error(`${r.status} ${await r.text().then(x=>x.slice(0,300))}`);return r.json() as Promise<any>;}
 function auth(p:ProviderName){const k=getSecretForProvider(p);return k?{Authorization:`Bearer ${k}`}:{};}
 
