@@ -5,18 +5,23 @@ export interface ProviderConfig {
   configured: boolean;
 }
 
+const ENV_KEYS: Record<ProviderName, string> = {
+  openrouter: "aliz",
+  together: "alizx",
+  replicate: "alizc",
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  gemini: "GEMINI_API_KEY",
+  xai: "XAI_API_KEY"
+};
+
 export function getProviderConfig(): ProviderConfig[] {
-  return [
-    { name: "openrouter", configured: Boolean(process.env.aliz) },
-    { name: "together", configured: Boolean(process.env.alizx) },
-    { name: "replicate", configured: Boolean(process.env.alizc) }
-  ];
+  return (Object.keys(ENV_KEYS) as ProviderName[]).map((name) => ({
+    name,
+    configured: Boolean(process.env[ENV_KEYS[name]])
+  }));
 }
 
 export function getSecretForProvider(provider: ProviderName): string | undefined {
-  switch (provider) {
-    case "openrouter": return process.env.aliz;
-    case "together": return process.env.alizx;
-    case "replicate": return process.env.alizc;
-  }
+  return process.env[ENV_KEYS[provider]];
 }
