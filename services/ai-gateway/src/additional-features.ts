@@ -49,7 +49,8 @@ const MORE_FEATURES: GenesisFeature[] = [
   ["media-pipeline","Media Processing Pipeline","media","planned","Coordinate image, audio and video transformations.",["storage","task-queue"]],
   ["app-store-preflight","App Store Preflight","build","planned","Validate mobile release metadata and build prerequisites.",["build-pipeline"]],
   ["security-scanner","AI Security Scanner","security","planned","Scan generated projects for common security configuration issues.",["codebase-index"]],
-  ["disaster-recovery","Disaster Recovery","devops","planned","Backup and restore project metadata and artifacts.",["artifact-store","database"]]
+  ["disaster-recovery","Disaster Recovery","devops","planned","Backup and restore project metadata and artifacts.",["artifact-store","database"]],
+  ["performance-profiler","AI Performance Profiler","devops","planned","Profile application, build and AI workloads to identify latency, memory and throughput bottlenecks.",["observability-dashboard","build-pipeline"]]
 ];
 
 export const ADDITIONAL_GENESIS_FEATURES: GenesisFeature[] = MORE_FEATURES.map(
