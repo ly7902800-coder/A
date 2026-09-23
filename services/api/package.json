@@ -9,10 +9,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@genesis-ai/ai-gateway": "0.1.0"
+    "@genesis-ai/ai-gateway": "0.1.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.5",
     "typescript": "^5.9.0"
   }
 }
