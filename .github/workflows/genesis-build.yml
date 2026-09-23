@@ -27,13 +27,13 @@ jobs:
           channel: stable
       - name: Flutter dependencies
         if: inputs.target == 'apk' || inputs.target == 'aab'
-        run: flutter pub get
+        run: cd apps/mobile && flutter pub get
       - name: Build APK
         if: inputs.target == 'apk'
-        run: flutter build apk --release
+        run: cd apps/mobile && flutter build apk --release
       - name: Build AAB
         if: inputs.target == 'aab'
-        run: flutter build appbundle --release
+        run: cd apps/mobile && flutter build appbundle --release
       - name: Upload web artifact
         if: inputs.target == 'web'
         uses: actions/upload-artifact@v4
@@ -45,10 +45,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: genesis-apk
-          path: '**/build/app/outputs/flutter-apk/*.apk'
+          path: 'apps/mobile/build/app/outputs/flutter-apk/*.apk'
       - name: Upload AAB
         if: inputs.target == 'aab'
         uses: actions/upload-artifact@v4
         with:
           name: genesis-aab
-          path: '**/build/app/outputs/bundle/release/*.aab'
+          path: 'apps/mobile/build/app/outputs/bundle/release/*.aab'
