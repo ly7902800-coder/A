@@ -1,4 +1,5 @@
 import { evaluatePermission, type PermissionRequest } from "./permissions.js";
+import { createApproval } from "./approvals.js";
 
 export interface ToolDefinition {
   name: string;
@@ -16,9 +17,7 @@ export class ToolRegistry {
 
   list() {
     return [...this.tools.values()].map(({ name, description, permission }) => ({
-      name,
-      description,
-      permission
+      name, description, permission
     }));
   }
 
@@ -29,8 +28,16 @@ export class ToolRegistry {
     const decision = evaluatePermission(tool.permission);
 
     if (!decision.allowed) {
+      const approval = createApproval({
+        tool: name,
+        input,
+        action: tool.permission.action,
+        resource: tool.permission.resource,
+        reason: tool.permission.reason
+      });
       return {
         status: "approval_required",
+        approvalId: approval.id,
         tool: name,
         action: tool.permission.action,
         resource: tool.permission.resource,
@@ -38,11 +45,7 @@ export class ToolRegistry {
       };
     }
 
-    return {
-      status: "completed",
-      tool: name,
-      result: await tool.execute(input)
-    };
+    return { status: "completed", tool: name, result: await tool.execute(input) };
   }
 }
 
@@ -52,40 +55,22 @@ export function createDefaultToolRegistry() {
   registry.register({
     name: "system.health",
     description: "Read the health state of Genesis services.",
-    permission: {
-      action: "read",
-      resource: "system",
-      reason: "Health inspection is read-only."
-    },
-    async execute() {
-      return { ok: true };
-    }
+    permission: { action: "read", resource: "system", reason: "Health inspection is read-only." },
+    async execute() { return { ok: true }; }
   });
 
   registry.register({
     name: "project.delete",
     description: "Delete a project only after explicit user approval.",
-    permission: {
-      action: "delete",
-      resource: "project",
-      reason: "Project deletion is destructive."
-    },
-    async execute(input) {
-      return { blocked: true, input };
-    }
+    permission: { action: "delete", resource: "project", reason: "Project deletion is destructive." },
+    async execute(input) { return { blocked: true, input }; }
   });
 
   registry.register({
     name: "release.publish",
     description: "Publish a release only after explicit user approval.",
-    permission: {
-      action: "publish",
-      resource: "release",
-      reason: "Publishing creates an external side effect."
-    },
-    async execute(input) {
-      return { blocked: true, input };
-    }
+    permission: { action: "publish", resource: "release", reason: "Publishing creates an external side effect." },
+    async execute(input) { return { blocked: true, input }; }
   });
 
   return registry;
