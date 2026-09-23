@@ -21,34 +21,33 @@ import { addMemory, listMemories, deleteMemory } from "./memory.js";
 import { requestPlatformAccess, approvePlatformAccess, revokePlatformAccess } from "./platform-permissions.js";
 import { listOAuthPlatforms, startOAuth, finishOAuth, type OAuthPlatform } from "./oauth-connectors.js";
 import { testConnector, type ConnectorHealth } from "./connector-health.js";
-import { createBrainPlan, type BrainPlan } from "./brain.js";
-import { createMission, getMission, listMissions, updateMissionStep, nextReadySteps, type Mission, type MissionStepStatus } from "./mission.js";
-import { getProjectDNA, upsertProjectDNA, addProjectDecision, type ProjectDNA } from "./project-dna.js";
-import { createCheckpoint, listCheckpoints, latestCheckpoint, type Checkpoint } from "./checkpoints.js";
-import { createHealingPlan, type HealingPlan } from "./self-healing.js";
-import { planParallelAgents, type AgentTask } from "./parallel-agents.js";
+import { createBrainPlan } from "./brain.js";
+import { createMission, getMission, listMissions, updateMissionStep, nextReadySteps } from "./mission.js";
+import { getProjectDNA, upsertProjectDNA, addProjectDecision } from "./project-dna.js";
+import { createCheckpoint, listCheckpoints, latestCheckpoint } from "./checkpoints.js";
+import { createHealingPlan } from "./self-healing.js";
+import { planParallelAgents } from "./parallel-agents.js";
+import { listPlatformTargets, discoverPlatform, planPlatformMission } from "./universal-platform-agent.js";
+import { createBrowserSession, browserPolicy } from "./browser-cloud-agent.js";
+import { listConnectors, resolveConnector, createIntegrationPlan } from "./connector-engine.js";
+import { executePlatformMission } from "./platform-executor.js";
 import type { ChatRequest } from "./types.js";
 
-export function createAiGateway() {
-  const executor = { execute: (request: ChatRequest) => routeChat(request) };
-  const tools = createDefaultToolRegistry();
-  const researchProvider = new FirecrawlResearchProvider(process.env.FIRECRAWL_API_KEY);
-  return {
-    listProviders: () => getProviderConfig(), listModels, listTools: () => tools.list(),
-    executeTool: (name:string,input:unknown) => tools.execute(name,input),
-    listApprovals: (status?:import("./approvals.js").ApprovalStatus) => listApprovals(status),
-    decideApproval:(id:string,approved:boolean)=>decideApproval(id,approved), consumeApproval:(id:string)=>consumeApproval(id),
-    research:(query:string,limit?:number)=>research(query,researchProvider,limit), hasProviderSecret:(provider:ProviderName)=>Boolean(getSecretForProvider(provider)),
-    chat:(request:ChatRequest)=>routeChat(request), stream:(request:ChatRequest,onToken:(token:string)=>void)=>streamChat(request,onToken),
-    runAgents:(objective:string,context:string|undefined,model:string)=>runAgentPipeline(objective,context,model,executor), routeModel, createArenaPlan,
-    validateProjectSpec:(spec:ProjectSpec)=>validateProjectSpec(spec), createBuildPlan:(request:BuildRequest)=>createBuildPlan(request),
-    createQAChecks, planMultiplayer, createAssetPipeline, createScenePlan, createAnimationPlan, listExportTargets,
-    addMemory, listMemories, deleteMemory, requestPlatformAccess, approvePlatformAccess, revokePlatformAccess,
-    listOAuthPlatforms, startOAuth, finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),
-    testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
-    createBrainPlan, createMission, getMission, listMissions, updateMissionStep, nextReadySteps,
-    getProjectDNA, upsertProjectDNA, addProjectDecision, createCheckpoint, listCheckpoints, latestCheckpoint,
-    createHealingPlan, planParallelAgents
-  };
+export function createAiGateway(){
+ const executor={execute:(request:ChatRequest)=>routeChat(request)};
+ const tools=createDefaultToolRegistry();
+ const researchProvider=new FirecrawlResearchProvider(process.env.FIRECRAWL_API_KEY);
+ return {
+  listProviders:()=>getProviderConfig(),listModels,listTools:()=>tools.list(),executeTool:(name:string,input:unknown)=>tools.execute(name,input),
+  listApprovals:(status?:import("./approvals.js").ApprovalStatus)=>listApprovals(status),decideApproval:(id:string,approved:boolean)=>decideApproval(id,approved),consumeApproval:(id:string)=>consumeApproval(id),
+  research:(query:string,limit?:number)=>research(query,researchProvider,limit),hasProviderSecret:(provider:ProviderName)=>Boolean(getSecretForProvider(provider)),
+  chat:(request:ChatRequest)=>routeChat(request),stream:(request:ChatRequest,onToken:(token:string)=>void)=>streamChat(request,onToken),
+  runAgents:(objective:string,context:string|undefined,model:string)=>runAgentPipeline(objective,context,model,executor),routeModel,createArenaPlan,
+  validateProjectSpec:(spec:ProjectSpec)=>validateProjectSpec(spec),createBuildPlan:(request:BuildRequest)=>createBuildPlan(request),createQAChecks,planMultiplayer,createAssetPipeline,createScenePlan,createAnimationPlan,listExportTargets,
+  addMemory,listMemories,deleteMemory,requestPlatformAccess,approvePlatformAccess,revokePlatformAccess,
+  listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
+  createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
+  listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission
+ };
 }
 export type { ChatRequest, ChatResponse, ModelDescriptor, ProviderName } from "./types.js";
