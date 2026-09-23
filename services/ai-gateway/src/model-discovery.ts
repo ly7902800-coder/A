@@ -20,7 +20,7 @@ async function discoverAnthropic():Promise<ModelDescriptor[]>{
  const k=getSecretForProvider("anthropic");if(!k)throw new Error("missing key");const d=await getJson("https://api.anthropic.com/v1/models",{"x-api-key":k,"anthropic-version":"2023-06-01"});return (d.data??[]).map((m:any)=>({id:`anthropic/${m.id}`,provider:"anthropic" as const,name:m.display_name??m.id,capabilities:caps(m.id)}));
 }
 async function discoverGemini():Promise<ModelDescriptor[]>{
- const k=getSecretForProvider("gemini");if(!k)throw new Error("missing key");const d=await getJson(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k)}`);return (d.models??[]).filter((m:any)=>m.supportedGenerationMethods?.includes("generateContent")).map((m:any)=>({id:`gemini/${String(m.name).replace(/^models\\//,"")}`,provider:"gemini" as const,name:m.displayName??m.name,capabilities:caps(m.name)}));
+ const k=getSecretForProvider("gemini");if(!k)throw new Error("missing key");const d=await getJson(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k)}`);return (d.models??[]).filter((m:any)=>m.supportedGenerationMethods?.includes("generateContent")).map((m:any)=>({id:`gemini/${String(m.name).replace(/^models\//,"")}`,provider:"gemini" as const,name:m.displayName??m.name,capabilities:caps(m.name)}));
 }
 async function discoverXai():Promise<ModelDescriptor[]>{
  const d=await getJson("https://api.x.ai/v1/models",auth("xai"));return (d.data??[]).map((m:any)=>({id:`xai/${m.id}`,provider:"xai" as const,name:m.id,capabilities:caps(m.id)}));
