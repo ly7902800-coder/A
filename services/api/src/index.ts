@@ -2,6 +2,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { createAiGateway } from "@genesis-ai/ai-gateway";
 import { rateLimit, clientKey } from "./security.js";
 
+const oauthProjects = new Map<string, { projectId: string; platform: "github" | "cloudflare" | "figma" }>();
+
 const port = Number(process.env.PORT ?? 8080);
 const gateway = createAiGateway();
 
@@ -57,6 +59,33 @@ const server = createServer(async (request, response) => {
       if (!body.platformId || !body.projectId) return sendJson(response, 400, { error: "platformId and projectId are required" });
       return sendJson(response, 200, gateway.approvePlatformAccess(body.projectId, body.platformId));
     }
+    if (url.pathname === "/v1/connectors" && request.method === "GET") {
+      return sendJson(response, 200, { connectors: gateway.listOAuthPlatforms() });
+    }
+    if (url.pathname === "/v1/connectors/authorize" && request.method === "POST") {
+      const body = await readJson(request);
+      if (!body.platform || !body.projectId || !body.redirectUri) return sendJson(response, 400, { error: "platform, projectId and redirectUri are required" });
+      const start = gateway.startOAuth(body.platform, body.redirectUri);
+      oauthProjects.set(start.state, { projectId: body.projectId, platform: body.platform });
+      return sendJson(response, 200, { platform: body.platform, authorizationUrl: start.authorizationUrl, state: start.state });
+    }
+    if (url.pathname === "/v1/connectors/callback" && request.method === "GET") {
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
+      const redirectUri = url.searchParams.get("redirect_uri") ?? process.env.GENESIS_OAUTH_CALLBACK_URL ?? "";
+      if (!code || !state || !redirectUri) return sendJson(response, 400, { error: "code, state and redirect URI are required" });
+      const target = oauthProjects.get(state);
+      if (!target) return sendJson(response, 400, { error: "Unknown or expired OAuth state" });
+      const token = await gateway.finishOAuth(target.platform, code, state, redirectUri);
+      oauthProjects.delete(state);
+      const { storeConnectorTokens } = await import("@genesis-ai/ai-gateway/token-vault");
+      const ref = storeConnectorTokens({ accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt: token.expiresIn ? Date.now() + token.expiresIn * 1000 : undefined });
+      gateway.approvePlatformAccess(target.projectId, target.platform);
+      const { attachConnectorCredentials } = await import("@genesis-ai/ai-gateway/platform-permissions");
+      attachConnectorCredentials(target.projectId, target.platform, { accessTokenRef: ref, expiresAt: token.expiresIn ? Date.now() + token.expiresIn * 1000 : undefined });
+      return sendJson(response, 200, { connected: true, platform: target.platform, projectId: target.projectId, scopes: token.scope ? token.scope.split(/[ ,]/).filter(Boolean) : undefined });
+    }
+
     if (url.pathname === "/v1/platform/access/revoke" && request.method === "POST") {
       const body = await readJson(request);
       return sendJson(response, 200, { revoked: gateway.revokePlatformAccess(body.projectId, body.platformId) });
