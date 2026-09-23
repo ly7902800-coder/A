@@ -1,4 +1,4 @@
-export type ProviderName = "openrouter" | "together" | "replicate";
+export type ProviderName = "openrouter" | "together" | "replicate" | "openai" | "anthropic" | "gemini" | "xai";
 
 export interface ChatRequest {
   model: string;
