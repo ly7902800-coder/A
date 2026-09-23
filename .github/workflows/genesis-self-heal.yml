@@ -1,0 +1,28 @@
+name: Genesis Self Heal
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        required: true
+        type: string
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Tests
+        run: npm test --if-present
+      - name: Dependency audit report
+        run: npm audit --omit=dev --audit-level=high || true
