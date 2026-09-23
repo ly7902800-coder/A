@@ -36,6 +36,10 @@ import { listConnectors, resolveConnector, createIntegrationPlan } from "./conne
 import { executePlatformMission } from "./platform-executor.js";
 import { executeConnectorAction, type ConnectorActionInput } from "./connector-actions.js";
 import type { ChatRequest } from "./types.js";
+import { executeCodingTask } from "./coding-agent.js";
+import { registerMcpServer, listMcpServers, listMcpTools, callMcpTool, disconnectMcpServer } from "./mcp-hub.js";
+import { runMultiAgentTeam } from "./multi-agent-runtime.js";
+import { runOpenAIAgent } from "./openai-agents-sdk.js";
 
 export function createAiGateway(){
  const executor={execute:(request:ChatRequest)=>routeChat(request)};
@@ -52,7 +56,7 @@ export function createAiGateway(){
   listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
   listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,requestAccountAccess,approveAccountAccess,revokeAccountAccess,listAccountAccess,createLinkedBrowserSession,approveLinkedBrowserSession,getLinkedBrowserSession,revokeLinkedBrowserSession,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
-  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input)
+  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam,runOpenAIAgent
  };
 }
 export type { ChatRequest, ChatResponse, ModelDescriptor, ProviderName } from "./types.js";
