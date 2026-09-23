@@ -29,6 +29,7 @@ import { createHealingPlan } from "./self-healing.js";
 import { planParallelAgents } from "./parallel-agents.js";
 import { listPlatformTargets, discoverPlatform, planPlatformMission } from "./universal-platform-agent.js";
 import { createBrowserSession, browserPolicy } from "./browser-cloud-agent.js";
+import { requestAccountAccess, approveAccountAccess, revokeAccountAccess, listAccountAccess, createLinkedBrowserSession, approveLinkedBrowserSession, getLinkedBrowserSession, revokeLinkedBrowserSession } from "./account-access.js";
 import { listConnectors, resolveConnector, createIntegrationPlan } from "./connector-engine.js";
 import { executePlatformMission } from "./platform-executor.js";
 import { executeConnectorAction, type ConnectorActionInput } from "./connector-actions.js";
@@ -48,7 +49,7 @@ export function createAiGateway(){
   addMemory,listMemories,deleteMemory,requestPlatformAccess,approvePlatformAccess,revokePlatformAccess,
   listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
-  listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
+  listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,requestAccountAccess,approveAccountAccess,revokeAccountAccess,listAccountAccess,createLinkedBrowserSession,approveLinkedBrowserSession,getLinkedBrowserSession,revokeLinkedBrowserSession,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
   executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input)
  };
 }
