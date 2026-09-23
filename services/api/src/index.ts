@@ -55,6 +55,24 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/v1/tools" && request.method === "GET") {
+      sendJson(response, 200, { tools: gateway.listTools() });
+      return;
+    }
+
+    if (url.pathname === "/v1/tools/execute" && request.method === "POST") {
+      const body = await readJson(request);
+
+      if (typeof body.name !== "string") {
+        sendJson(response, 400, { error: "tool name is required" });
+        return;
+      }
+
+      const result = await gateway.executeTool(body.name, body.input);
+      sendJson(response, 200, result);
+      return;
+    }
+
     if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
       const body = await readJson(request);
       if (!isChatBody(body)) {
