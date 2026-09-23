@@ -10,7 +10,9 @@ export interface GenesisFeature {
   requires: string[];
 }
 
-const MORE_FEATURES: GenesisFeature[] = [
+type FeatureTuple = [string,string,FeatureCategory,FeatureStatus,string,string[]];
+
+const MORE_FEATURES: FeatureTuple[] = [
   ["semantic-memory","Semantic Memory","ai","planned","Vector-backed retrieval for approved memories and project knowledge.",["database","embeddings"]],
   ["memory-controls","Memory Controls","ai","planned","View, export and delete individual memories.",["auth"]],
   ["prompt-library","Prompt Library","ai","planned","Versioned reusable prompts and agent instructions.",["database"]],
@@ -70,12 +72,10 @@ const MORE_FEATURES: GenesisFeature[] = [
   ["media-render-queue","Media Render Queue","build","planned","Queue long-running image/video/audio generation and rendering jobs with progress and retries.",["task-queue","job-retry"]],
   ["creative-asset-library","Creative Asset Library","media","planned","Version and organize generated images, video, audio, subtitles and project references.",["artifact-store","file-workspace"]],
   ["api-secret-rotation","Integration Secret Rotation","security","planned","Rotate supported credentials and revoke old access after explicit approval.",["secret-vault","oauth-connectors","audit-log"]],
-  ["connector-health","Connector Health Monitor","devops","planned","Detect expired, revoked or failing external integrations and request reauthorization.",["oauth-connectors","observability-dashboard"]],
+  ["connector-health","Connector Health Monitor","devops","planned","Detect expired, revoked or failing external integrations and request reauthorization.",["oauth-connectors","observability-dashboard"]]
 ];
 
-export const ADDITIONAL_GENESIS_FEATURES: GenesisFeature[] = MORE_FEATURES.map(
-  ([id,name,category,status,description,requires]) => ({id,name,category,status,description,requires})
-);
+export const ADDITIONAL_GENESIS_FEATURES: GenesisFeature[] = MORE_FEATURES.map(([id,name,category,status,description,requires]) => ({id,name,category,status,description,requires}));
 
 export function listAdditionalFeatures(status?: FeatureStatus) {
   return ADDITIONAL_GENESIS_FEATURES.filter(f => !status || f.status === status);
