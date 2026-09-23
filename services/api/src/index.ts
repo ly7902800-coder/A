@@ -1,29 +1,30 @@
+import { createServer } from "node:http";
 import { createAiGateway } from "@genesis-ai/ai-gateway";
 
 const port = Number(process.env.PORT ?? 8080);
 const gateway = createAiGateway();
 
-const server = Bun?.serve
-  ? Bun.serve({
-      port,
-      fetch: async (request: Request) => {
-        const url = new URL(request.url);
+const server = createServer((request, response) => {
+  const url = new URL(request.url ?? "/", "http://localhost");
 
-        if (url.pathname === "/health") {
-          return Response.json({ ok: true, service: "genesis-api" });
-        }
+  response.setHeader("Content-Type", "application/json; charset=utf-8");
 
-        if (url.pathname === "/v1/models" && request.method === "GET") {
-          return Response.json({ models: gateway.listProviders() });
-        }
+  if (url.pathname === "/health" && request.method === "GET") {
+    response.statusCode = 200;
+    response.end(JSON.stringify({ ok: true, service: "genesis-api" }));
+    return;
+  }
 
-        return Response.json({ error: "Not found" }, { status: 404 });
-      }
-    })
-  : null;
+  if (url.pathname === "/v1/models" && request.method === "GET") {
+    response.statusCode = 200;
+    response.end(JSON.stringify({ providers: gateway.listProviders() }));
+    return;
+  }
 
-if (!server) {
-  console.log("Genesis API scaffold created. Runtime adapter will be added next.");
-} else {
+  response.statusCode = 404;
+  response.end(JSON.stringify({ error: "Not found" }));
+});
+
+server.listen(port, () => {
   console.log(`Genesis API listening on :${port}`);
-}
+});
