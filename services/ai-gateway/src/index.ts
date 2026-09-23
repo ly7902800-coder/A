@@ -1,4 +1,5 @@
-import { getProviderConfig, getSecretForProvider, type ProviderName } from "./providers.js";
+import { getProviderConfig, getSecretForProvider } from "./providers.js";
+import type { ProviderName } from "./types.js";
 import { discoverModels } from "./model-discovery.js";
 import { listModels } from "./models.js";
 import { routeChat } from "./router.js";
@@ -12,7 +13,7 @@ import { routeModel } from "./auto-router.js";
 import { smartRoute } from "./smart-router.js";
 import { createArenaPlan } from "./model-arena.js";
 import { validateProjectSpec, type ProjectSpec } from "./project-spec.js";
-import { createBuildPlan, type BuildRequest } from "./build-pipeline.js";
+import { createBuildPlan as pipelineBuildPlan, type BuildRequest } from "./build-pipeline.js";
 import { createQAChecks } from "./qa-agent.js";
 import { planMultiplayer } from "./multiplayer.js";
 import { createAssetPipeline } from "./asset-pipeline.js";
@@ -41,6 +42,7 @@ import { registerMcpServer, listMcpServers, listMcpTools, callMcpTool, disconnec
 import { runMultiAgentTeam } from "./multi-agent-runtime.js";
 import { runOpenAIAgent } from "./openai-agents-sdk.js";
 import { createBuildPlan, dispatchBuild, uiScreenSpec, seoGeoAudit } from "./platform-factory.js";
+import { runSelfDevelopment, type SelfDevelopmentInput } from "./self-development-engine.js";
 
 export function createAiGateway(){
  const executor={execute:(request:ChatRequest)=>routeChat(request)};
@@ -52,12 +54,13 @@ export function createAiGateway(){
   research:(query:string,limit?:number)=>research(query,researchProvider,limit),hasProviderSecret:(provider:ProviderName)=>Boolean(getSecretForProvider(provider)),
   chat:(request:ChatRequest)=>smartRoute(request),stream:(request:ChatRequest,onToken:(token:string)=>void)=>streamChat(request,onToken),
   runAgents:(objective:string,context:string|undefined,model:string)=>runAgentPipeline(objective,context,model,executor),routeModel,createArenaPlan,
-  validateProjectSpec:(spec:ProjectSpec)=>validateProjectSpec(spec),createBuildPlan:(request:BuildRequest)=>createBuildPlan(request),createQAChecks,planMultiplayer,createAssetPipeline,createScenePlan,createAnimationPlan,listExportTargets,
+  validateProjectSpec:(spec:ProjectSpec)=>validateProjectSpec(spec),createBuildPlan:(request:BuildRequest)=>pipelineBuildPlan(request),createQAChecks,planMultiplayer,createAssetPipeline,createScenePlan,createAnimationPlan,listExportTargets,
   addMemory,listMemories,deleteMemory,requestPlatformAccess,approvePlatformAccess,revokePlatformAccess,
   listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
   listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,requestAccountAccess,approveAccountAccess,revokeAccountAccess,listAccountAccess,createLinkedBrowserSession,approveLinkedBrowserSession,getLinkedBrowserSession,revokeLinkedBrowserSession,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
-  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam,runOpenAIAgent,createBuildPlan,dispatchBuild,uiScreenSpec,seoGeoAudit
+  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam,runOpenAIAgent,createBuildPlan,dispatchBuild,uiScreenSpec,seoGeoAudit,
+  runSelfDevelopment
  };
 }
 export type { ChatRequest, ChatResponse, ModelDescriptor, ProviderName } from "./types.js";
