@@ -30,19 +30,19 @@ if(uiBtn)uiBtn.onclick=()=>{output.innerHTML='<div class="designer"><h3>🎨 UI 
 
 const cloudPlatformsBtn=document.getElementById("cloudPlatformsBtn");
 const CLOUD_PLATFORMS=[
-  {id:"flutter",icon:"🦋",name:"Flutter",type:"تطبيقات Android / iOS / Web",target:"flutter-apk",desc:"بناء تطبيقات متعددة المنصات وتشغيل الاختبارات."},
-  {id:"python",icon:"🐍",name:"Python",type:"Runtime + مكتبات + سكربتات",target:"python",desc:"تشغيل Python، فحص الكود، والمكتبات والمهام الآلية."},
-  {id:"termux",icon:"⌨️",name:"Termux",type:"بيئة طرفية Android",target:"node",desc:"بيئة أوامر شبيهة بالطرفية لمهام Android؛ التنفيذ السحابي يمر عبر Worker."},
-  {id:"node",icon:"🟢",name:"Node.js",type:"Backend + أدوات JavaScript",target:"node",desc:"تشغيل npm، بناء خدمات Node.js واختبارها."},
-  {id:"docker",icon:"🐳",name:"Docker",type:"Containers + DevOps",target:"node",desc:"بيئات معزولة وحزم بناء قابلة للتكرار."},
-  {id:"blender",icon:"🧊",name:"Blender",type:"3D + Assets",target:"blender",desc:"معالجة ملفات 3D، سكربتات Python، وتجهيز أصول الألعاب."},
-  {id:"godot",icon:"🎮",name:"Godot",type:"محرك ألعاب 2D / 3D",target:"godot",desc:"إنشاء وفحص مشاريع ألعاب Godot."},
-  {id:"unity",icon:"🕹️",name:"Unity",type:"محرك ألعاب 2D / 3D",target:"unity",desc:"مسار تنفيذ Unity جاهز للـ runner المرخّص."},
-  {id:"unreal",icon:"⚡",name:"Unreal Engine",type:"3D + C++ + Blueprints",target:"unreal",desc:"مسار تنفيذ Unreal يحتاج runner سحابي مزودًا بالمحرك."},
-  {id:"playwright",icon:"🧪",name:"Playwright",type:"Browser Automation + Testing",target:"node",desc:"اختبارات المتصفح والأتمتة ضمن Worker."}
+  {id:"flutter",icon:"🦋",name:"Flutter",type:"تطبيقات Android / iOS / Web",target:"flutter-apk",desc:"منصة رئيسية لبناء تطبيقات الهاتف والويب من مشروع واحد."},
+  {id:"react-native",icon:"⚛️",name:"React Native",type:"تطبيقات Android / iOS",target:"node",desc:"بناء تطبيقات أصلية متعددة المنصات باستخدام React وJavaScript/TypeScript."},
+  {id:"expo",icon:"📱",name:"Expo",type:"React Native + Mobile",target:"node",desc:"تطوير وبناء ونشر تطبيقات React Native بسرعة ضمن بيئة سحابية."},
+  {id:"android-kotlin",icon:"🤖",name:"Android + Kotlin",type:"Android Native",target:"node",desc:"بناء تطبيقات Android أصلية باستخدام Kotlin وواجهات Android."},
+  {id:"ionic",icon:"⚡",name:"Ionic",type:"Hybrid Mobile Apps",target:"node",desc:"إنشاء تطبيقات الهاتف باستخدام تقنيات الويب مع Capacitor."},
+  {id:"dotnet-maui",icon:"🔷",name:".NET MAUI",type:"Cross-platform Apps",target:"node",desc:"بناء تطبيقات Android وiOS وWindows من قاعدة كود مشتركة."},
+  {id:"python",icon:"🐍",name:"Python",type:"Backend + Libraries",target:"python",desc:"بيئة سحابية للـ APIs والخدمات الخلفية والمكتبات والسكربتات التي تخدم التطبيقات."},
+  {id:"node",icon:"🟢",name:"Node.js",type:"Backend + npm",target:"node",desc:"تشغيل JavaScript/TypeScript، بناء APIs، وإدارة مكتبات npm."},
+  {id:"termux",icon:"⌨️",name:"Termux",type:"Terminal + Commands",target:"node",desc:"واجهة أوامر وأدوات تطوير؛ داخل Genesis تُنفذ الأوامر عبر بيئة سحابية آمنة."},
+  {id:"capacitor",icon:"🔌",name:"Capacitor",type:"Web → Native Apps",target:"node",desc:"تحويل تطبيقات الويب إلى تطبيقات Android وiOS مع الوصول إلى قدرات الجهاز."}
 ];
 function renderCloudPlatforms(){
-  output.innerHTML='<div class="cloud-workspace"><div class="cloud-head"><div><h2>☁️ المنصات السحابية وبيئات التنفيذ</h2><p>بيئات كمبيوتر سحابية يستخدمها Genesis لبناء التطبيقات والألعاب وتشغيل المكتبات والأوامر والاختبارات.</p></div><span class="cloud-badge">10 منصات</span></div><div class="platform-grid">'+CLOUD_PLATFORMS.map(p=>'<article class="platform-card"><div class="platform-icon">'+p.icon+'</div><div class="platform-main"><h3>'+p.name+'</h3><span>'+p.type+'</span><p>'+p.desc+'</p><div class="platform-actions"><button data-run="'+p.id+'">▶ تشغيل</button><button class="ghost" data-info="'+p.id+'">ℹ التفاصيل</button></div></div></article>').join('')+'</div><div id="platformResult" class="platform-result">اختر منصة لبدء مهمة تنفيذ أو بناء.</div></div>';
+  output.innerHTML='<div class="cloud-workspace"><div class="cloud-head"><div><h2>☁️ منصات بناء التطبيقات</h2><p>هذا القسم مخصص حصريًا لتطوير وبناء التطبيقات. Genesis يستخدم هذه البيئات لإنشاء المشروع، تثبيت المكتبات، تشغيل الأوامر، الاختبارات، وإخراج ملفات البناء.</p></div><span class="cloud-badge">10 منصات</span></div><div class="platform-grid">'+CLOUD_PLATFORMS.map(p=>'<article class="platform-card"><div class="platform-icon">'+p.icon+'</div><div class="platform-main"><h3>'+p.name+'</h3><span>'+p.type+'</span><p>'+p.desc+'</p><div class="platform-actions"><button data-run="'+p.id+'">▶ تشغيل البيئة</button><button class="ghost" data-info="'+p.id+'">ℹ التفاصيل</button></div></div></article>').join('')+'</div><div id="platformResult" class="platform-result">اختر منصة لبدء إنشاء أو بناء تطبيق.</div></div>';
   output.querySelectorAll("[data-run]").forEach(btn=>btn.onclick=()=>runCloudPlatform(btn.dataset.run));
   output.querySelectorAll("[data-info]").forEach(btn=>btn.onclick=()=>showPlatformInfo(btn.dataset.info));
 }
@@ -50,14 +50,10 @@ async function runCloudPlatform(id){
   const p=CLOUD_PLATFORMS.find(x=>x.id===id), box=document.getElementById("platformResult");
   if(!p||!box)return;
   if(!token()){box.textContent="🔐 سجّل الدخول أولًا.";return;}
-  if(!["flutter","python","node","blender","godot"].includes(id)){
-    box.textContent="ℹ️ "+p.name+" مضاف كمسار تنفيذ. يحتاج Runner/بيئة مناسبة قبل التشغيل الفعلي من السحابة.";
-    return;
-  }
-  box.textContent="⏳ يتم إرسال مهمة "+p.name+" إلى Execution Worker...";
+  box.textContent="⏳ يتم تجهيز بيئة "+p.name+"...";
   try{
     const d=await api("/v1/execution/build",{method:"POST",body:JSON.stringify({repo:"ly7902800-coder/A",branch:"main",target:p.target})});
-    box.textContent="✅ تم إنشاء المهمة: "+(d.id||d.jobId||"بدون رقم")+" — يمكنك متابعة السجل من Logs.";
+    box.textContent="✅ تم إنشاء مهمة "+p.name+": "+(d.id||d.jobId||"بدون رقم")+" — النتيجة والسجلات تظهر في Build وLogs.";
   }catch(e){box.textContent="❌ "+e.message;}
 }
 function showPlatformInfo(id){
