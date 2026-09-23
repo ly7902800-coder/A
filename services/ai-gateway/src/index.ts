@@ -1,4 +1,5 @@
 import { getProviderConfig, getSecretForProvider, type ProviderName } from "./providers.js";
+import { discoverModels } from "./model-discovery.js";
 import { listModels } from "./models.js";
 import { routeChat } from "./router.js";
 import { streamChat } from "./stream.js";
@@ -40,7 +41,7 @@ export function createAiGateway(){
  const tools=createDefaultToolRegistry();
  const researchProvider=new FirecrawlResearchProvider(process.env.FIRECRAWL_API_KEY);
  return {
-  listProviders:()=>getProviderConfig(),listModels,listTools:()=>tools.list(),executeTool:(name:string,input:unknown)=>tools.execute(name,input),
+  listProviders:()=>getProviderConfig(),listModels,discoverModels,listTools:()=>tools.list(),executeTool:(name:string,input:unknown)=>tools.execute(name,input),
   listApprovals:(status?:import("./approvals.js").ApprovalStatus)=>listApprovals(status),decideApproval:(id:string,approved:boolean)=>decideApproval(id,approved),consumeApproval:(id:string)=>consumeApproval(id),
   research:(query:string,limit?:number)=>research(query,researchProvider,limit),hasProviderSecret:(provider:ProviderName)=>Boolean(getSecretForProvider(provider)),
   chat:(request:ChatRequest)=>routeChat(request),stream:(request:ChatRequest,onToken:(token:string)=>void)=>streamChat(request,onToken),
