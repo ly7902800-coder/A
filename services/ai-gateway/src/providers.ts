@@ -7,17 +7,16 @@ export interface ProviderConfig {
 
 export function getProviderConfig(): ProviderConfig[] {
   return [
-    {
-      name: "openrouter",
-      configured: Boolean(process.env.OPENROUTER_API_KEY)
-    },
-    {
-      name: "together",
-      configured: Boolean(process.env.TOGETHER_API_KEY)
-    },
-    {
-      name: "replicate",
-      configured: Boolean(process.env.REPLICATE_API_TOKEN)
-    }
+    { name: "openrouter", configured: Boolean(process.env.aliz) },
+    { name: "together", configured: Boolean(process.env.alizx) },
+    { name: "replicate", configured: Boolean(process.env.alizc) }
   ];
+}
+
+export function getSecretForProvider(provider: ProviderName): string | undefined {
+  switch (provider) {
+    case "openrouter": return process.env.aliz;
+    case "together": return process.env.alizx;
+    case "replicate": return process.env.alizc;
+  }
 }
