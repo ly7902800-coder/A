@@ -19,7 +19,7 @@ export interface RoutingCandidate {
 export function routeModel(request: RoutingRequest): RoutingCandidate[] {
   const preferred = request.preferredProviders?.length
     ? request.preferredProviders
-    : getProviderConfig().map((p) => p.id as ProviderName);
+    : getProviderConfig().map((p) => p.name as ProviderName);
 
   const models = listModels();
   return preferred
