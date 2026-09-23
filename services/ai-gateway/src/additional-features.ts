@@ -50,7 +50,27 @@ const MORE_FEATURES: GenesisFeature[] = [
   ["app-store-preflight","App Store Preflight","build","planned","Validate mobile release metadata and build prerequisites.",["build-pipeline"]],
   ["security-scanner","AI Security Scanner","security","planned","Scan generated projects for common security configuration issues.",["codebase-index"]],
   ["disaster-recovery","Disaster Recovery","devops","planned","Backup and restore project metadata and artifacts.",["artifact-store","database"]],
-  ["performance-profiler","AI Performance Profiler","devops","planned","Profile application, build and AI workloads to identify latency, memory and throughput bottlenecks.",["observability-dashboard","build-pipeline"]]
+  ["performance-profiler","AI Performance Profiler","devops","planned","Profile application, build and AI workloads to identify latency, memory and throughput bottlenecks.",["observability-dashboard","build-pipeline"]],
+  ["creative-image-generation","AI Image Studio","media","planned","Generate and edit images from prompts, references and project assets.",["media-pipeline"]],
+  ["creative-video-generation","AI Video Studio","media","planned","Generate short and long-form videos from scripts, prompts, storyboards and approved source media.",["media-pipeline","task-queue"]],
+  ["video-web-research","Web Video Research","media","planned","Find web media from permitted sources, verify usage rights, collect metadata and prepare an edit plan.",["research","media-pipeline"]],
+  ["automatic-video-editor","AI Video Editor","media","planned","Assemble clips, transitions, captions, music and narration from a structured brief.",["creative-video-generation","media-pipeline"]],
+  ["subtitle-transcription","Speech Transcription and Subtitles","media","planned","Transcribe user-provided or licensed audio and generate timed subtitles.",["vision-ocr","media-pipeline"]],
+  ["quran-script-subtitles","Arabic Script Typography","media","planned","Render Arabic captions with selectable approved Arabic/Quran-style typography and precise timing; requires appropriate font/content licensing.",["subtitle-transcription"]],
+  ["voice-input","Real-time Voice Input","ai","planned","Understand user-provided voice messages and live speech.",["speech-to-text","realtime"]],
+  ["voice-conversation","Real-time Voice Conversation","ai","planned","Low-latency bidirectional voice conversation with interruption handling.",["voice-input","text-to-speech","realtime"]],
+  ["app-builder","AI App Builder","engineering","planned","Generate full-stack web and mobile application plans and implementation tasks from requirements.",["codebase-engineer","cloud-ide","build-pipeline"]],
+  ["website-builder","AI Website Builder","engineering","planned","Generate responsive websites, components, content structure and deployment configuration.",["ui-system-generator","codebase-engineer"]],
+  ["api-discovery","API Discovery Assistant","engineering","planned","Identify suitable documented APIs for a requested capability and prepare integration plans.",["research","oauth-connectors"]],
+  ["account-connected-api-setup","Account-Connected Integration Setup","security","planned","With explicit authorization, guide or execute supported OAuth integrations and retrieve permitted API configuration.",["oauth-connectors","approval-center","secret-vault"]],
+  ["license-rights-check","Media Rights Check","security","planned","Track source URLs, licenses and usage restrictions before media is used in generated projects.",["video-web-research","audit-log"]],
+  ["creative-storyboard","AI Storyboard Director","media","planned","Turn a brief into scenes, shots, timing, narration and asset requirements.",["creative-video-generation"]],
+  ["voice-casting","AI Voice Casting","media","planned","Select or generate approved synthetic narration voices and map them to scenes.",["text-to-speech","media-pipeline"]],
+  ["audio-postproduction","AI Audio Postproduction","media","planned","Clean, mix and synchronize narration, music and effects for project media.",["media-pipeline"]],
+  ["media-render-queue","Media Render Queue","build","planned","Queue long-running image/video/audio generation and rendering jobs with progress and retries.",["task-queue","job-retry"]],
+  ["creative-asset-library","Creative Asset Library","media","planned","Version and organize generated images, video, audio, subtitles and project references.",["artifact-store","file-workspace"]],
+  ["api-secret-rotation","Integration Secret Rotation","security","planned","Rotate supported credentials and revoke old access after explicit approval.",["secret-vault","oauth-connectors","audit-log"]],
+  ["connector-health","Connector Health Monitor","devops","planned","Detect expired, revoked or failing external integrations and request reauthorization.",["oauth-connectors","observability-dashboard"]],
 ];
 
 export const ADDITIONAL_GENESIS_FEATURES: GenesisFeature[] = MORE_FEATURES.map(
