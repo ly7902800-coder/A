@@ -17,7 +17,7 @@ export async function geminiInteraction(input: string, model = "gemini-flash-lat
     outputText: Array.isArray((interaction as any).outputs)
       ? (interaction as any).outputs.map((x:any) => x?.text ?? x?.content ?? "").join("")
       : "",
-    usage: interaction.usage
+    usage: (interaction as any).usage as Record<string, unknown> | undefined
   };
 }
 
