@@ -4,6 +4,8 @@ import { routeChat } from "./router.js";
 import { streamChat } from "./stream.js";
 import { runAgentPipeline } from "./orchestrator.js";
 import { createDefaultToolRegistry } from "./tools.js";
+import { research } from "./research.js";
+import { FirecrawlResearchProvider } from "./tool-adapters.js";
 import type { ChatRequest } from "./types.js";
 
 export function createAiGateway() {
@@ -11,6 +13,7 @@ export function createAiGateway() {
     execute: (request: ChatRequest) => routeChat(request)
   };
   const tools = createDefaultToolRegistry();
+  const researchProvider = new FirecrawlResearchProvider(process.env.FIRECRAWL_API_KEY);
 
   return {
     listProviders() {
@@ -22,6 +25,9 @@ export function createAiGateway() {
     },
     executeTool(name: string, input: unknown) {
       return tools.execute(name, input);
+    },
+    research(query: string, limit?: number) {
+      return research(query, researchProvider, limit);
     },
     hasProviderSecret(provider: ProviderName) {
       return Boolean(getSecretForProvider(provider));
