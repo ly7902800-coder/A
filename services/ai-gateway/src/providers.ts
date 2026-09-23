@@ -1,4 +1,4 @@
-export type ProviderName = "openrouter" | "together" | "replicate";
+import type { ProviderName } from "./types.js";
 
 export interface ProviderConfig {
   name: ProviderName;
