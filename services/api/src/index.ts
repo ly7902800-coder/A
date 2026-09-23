@@ -2,25 +2,16 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { createAiGateway } from "@genesis-ai/ai-gateway";
 import { rateLimit, clientKey } from "./security.js";
 
-const oauthProjects = new Map<string, { projectId: string; platform: "github" | "cloudflare" | "figma" }>();
-
+const oauthProjects = new Map<string, { projectId: string; platform: "github" | "cloudflare" | "figma" | "google" }>();
 const port = Number(process.env.PORT ?? 8080);
 const gateway = createAiGateway();
 
 function sendJson(response: ServerResponse, status: number, data: unknown) {
-  response.statusCode = status;
-  response.setHeader("Content-Type", "application/json; charset=utf-8");
-  response.end(JSON.stringify(data));
+  response.statusCode = status; response.setHeader("Content-Type", "application/json; charset=utf-8"); response.end(JSON.stringify(data));
 }
-
 async function readJson(request: IncomingMessage) {
-  let body = "";
-  for await (const chunk of request) {
-    body += chunk;
-    if (body.length > 1_000_000) throw new Error("Request body too large");
-  }
-  if (!body) return {};
-  return JSON.parse(body);
+  let body = ""; for await (const chunk of request) { body += chunk; if (body.length > 1_000_000) throw new Error("Request body too large"); }
+  return body ? JSON.parse(body) : {};
 }
 
 const server = createServer(async (request, response) => {
@@ -32,93 +23,46 @@ const server = createServer(async (request, response) => {
     if (url.pathname === "/v1/providers" && request.method === "GET") return sendJson(response, 200, { providers: gateway.listProviders() });
     if (url.pathname === "/v1/models" && request.method === "GET") return sendJson(response, 200, { models: gateway.listModels() });
     if (url.pathname === "/v1/tools" && request.method === "GET") return sendJson(response, 200, { tools: gateway.listTools() });
+
     if (url.pathname === "/v1/features" && request.method === "GET") {
       const [{ GENESIS_FEATURES }, { ADDITIONAL_GENESIS_FEATURES }] = await Promise.all([
-        import("@genesis-ai/ai-gateway/feature-registry"),
-        import("@genesis-ai/ai-gateway/additional-features")
+        import("@genesis-ai/ai-gateway/feature-registry"), import("@genesis-ai/ai-gateway/additional-features")
       ]);
       return sendJson(response, 200, { features: [...GENESIS_FEATURES, ...ADDITIONAL_GENESIS_FEATURES] });
     }
-    if (url.pathname === "/v1/integrations" && request.method === "GET") {\n      const { listIntegrations, listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { integrations: listIntegrations(), statuses: listIntegrationStatuses() });\n    }\n    if (url.pathname === "/v1/integrations/status" && request.method === "GET") {\n      const { listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { statuses: listIntegrationStatuses() });\n    }\n    const integrationTestMatch = url.pathname.match(/^\\/v1\\/integrations\\/([^/]+)\\/test$/);\n    if (integrationTestMatch && request.method === "POST") {\n      return sendJson(response, 200, await gateway.testConnector(integrationTestMatch[1]));\n    }\n    if (url.pathname.startsWith("/v1/integrations/") && request.method === "GET") {\n      const id = url.pathname.slice("/v1/integrations/".length);\n      const { getIntegration, getIntegrationStatus } = await import("@genesis-ai/ai-gateway/integration-registry");\n      const definition = getIntegration(id);\n      if (!definition) return sendJson(response, 404, { error: "Unknown integration" });\n      return sendJson(response, 200, { integration: definition, status: getIntegrationStatus(id) });\n    }\n    if (url.pathname === "/v1/mission" && request.method === "POST") {
-      const body = await readJson(request);
-      if (typeof body.objective !== "string" || !body.objective.trim()) return sendJson(response, 400, { error: "objective is required" });
-      return sendJson(response, 201, gateway.createBrainPlan(body.objective));
-    }
-    if (url.pathname === "/v1/missions" && request.method === "GET") return sendJson(response, 200, { missions: gateway.listMissions() });
-    const missionMatch = url.pathname.match(/^\/v1\/missions\/([^/]+)$/);
-    if (missionMatch && request.method === "GET") {
-      const mission = gateway.getMission(missionMatch[1]);
-      return mission ? sendJson(response, 200, { mission }) : sendJson(response, 404, { error: "Mission not found" });
-    }
-    const missionStepMatch = url.pathname.match(/^\/v1\/missions\/([^/]+)\/steps\/([^/]+)$/);
-    if (missionStepMatch && request.method === "POST") {
-      const body = await readJson(request);
-      const allowed = ["pending","running","completed","failed","blocked","approval_required"];
-      if (!allowed.includes(body.status)) return sendJson(response, 400, { error: "invalid step status" });
-      const mission = gateway.updateMissionStep(missionStepMatch[1], missionStepMatch[2], body.status);
-      return mission ? sendJson(response, 200, { mission }) : sendJson(response, 404, { error: "Mission or step not found" });
-    }
-    if (url.pathname === "/v1/project/dna" && request.method === "GET") {
-      const projectId = url.searchParams.get("projectId");
-      if (!projectId) return sendJson(response, 400, { error: "projectId is required" });
-      return sendJson(response, 200, { dna: gateway.getProjectDNA(projectId) ?? null });
-    }
-    if (url.pathname === "/v1/project/dna" && request.method === "POST") {
-      const body = await readJson(request);
-      if (!body.projectId) return sendJson(response, 400, { error: "projectId is required" });
-      return sendJson(response, 200, { dna: gateway.upsertProjectDNA({
-        projectId: body.projectId, name: body.name, type: body.type,
-        stack: Array.isArray(body.stack) ? body.stack : [],
-        integrations: Array.isArray(body.integrations) ? body.integrations : [],
-        requirements: Array.isArray(body.requirements) ? body.requirements : [],
-        decisions: Array.isArray(body.decisions) ? body.decisions : [],
-        knownIssues: Array.isArray(body.knownIssues) ? body.knownIssues : []
-      }) });
-    }
-    if (url.pathname === "/v1/project/checkpoints" && request.method === "GET") {
-      const projectId = url.searchParams.get("projectId");
-      if (!projectId) return sendJson(response, 400, { error: "projectId is required" });
-      return sendJson(response, 200, { checkpoints: gateway.listCheckpoints(projectId), latest: gateway.latestCheckpoint(projectId) ?? null });
-    }
-    if (url.pathname === "/v1/project/checkpoints" && request.method === "POST") {
-      const body = await readJson(request);
-      if (!body.projectId || !body.label) return sendJson(response, 400, { error: "projectId and label are required" });
-      return sendJson(response, 201, { checkpoint: gateway.createCheckpoint(body.projectId, body.label, body.snapshotRef) });
-    }
-    if (url.pathname === "/v1/self-healing/plan" && request.method === "POST") {
-      const body = await readJson(request);
-      if (typeof body.error !== "string" || !body.error.trim()) return sendJson(response, 400, { error: "error is required" });
-      return sendJson(response, 200, { plan: gateway.createHealingPlan(body.error) });
-    }
-    if (url.pathname === "/v1/agents/parallel-plan" && request.method === "POST") {
-      const body = await readJson(request);
-      if (typeof body.objective !== "string" || !body.objective.trim()) return sendJson(response, 400, { error: "objective is required" });
-      return sendJson(response, 200, { tasks: gateway.planParallelAgents(body.objective) });
-    }
 
-    if (url.pathname === "/v1/platforms" && request.method === "GET") {
-      const { ALL_PLATFORMS } = await import("@genesis-ai/ai-gateway/extended-platforms");
-      return sendJson(response, 200, { platforms: ALL_PLATFORMS });
-    }
-
-    if (url.pathname === "/v1/platform/access/request" && request.method === "POST") {
-      const body = await readJson(request);
-      if (!body.platformId || !body.projectId || !Array.isArray(body.scopes)) return sendJson(response, 400, { error: "platformId, projectId and scopes are required" });
-      return sendJson(response, 200, gateway.requestPlatformAccess({
-        platformId: body.platformId,
-        projectId: body.projectId,
-        scopes: body.scopes,
-        reason: typeof body.reason === "string" ? body.reason : "Genesis needs to work on the selected platform."
-      }));
-    }
-    if (url.pathname === "/v1/platform/access/approve" && request.method === "POST") {
-      const body = await readJson(request);
-      if (!body.platformId || !body.projectId) return sendJson(response, 400, { error: "platformId and projectId are required" });
-      return sendJson(response, 200, gateway.approvePlatformAccess(body.projectId, body.platformId));
-    }
-    if (url.pathname === "/v1/connectors" && request.method === "GET") {
+    if (url.pathname === "/v1/connectors" && request.method === "GET")
       return sendJson(response, 200, { connectors: gateway.listOAuthPlatforms() });
+
+    if (url.pathname === "/v1/account/google" && request.method === "GET") {
+      const projectId = url.searchParams.get("projectId");
+      if (!projectId) return sendJson(response, 400, { error: "projectId is required" });
+      const connector = gateway.listOAuthPlatforms().find((x) => x.platform === "google");
+      return sendJson(response, 200, {
+        platform: "google", projectId,
+        connected: false,
+        configured: connector?.configured ?? false,
+        status: "not_connected",
+        scopes: connector?.scopes ?? [],
+        capabilities: {
+          profile: true, driveMetadataReadonly: true, calendarReadonly: true,
+          gmail: false, driveWrite: false, calendarWrite: false
+        }
+      });
     }
+
+    if (url.pathname === "/v1/account/google/connect" && request.method === "POST") {
+      const body = await readJson(request);
+      if (!body.projectId || !body.redirectUri) return sendJson(response, 400, { error: "projectId and redirectUri are required" });
+      const start = gateway.startOAuth("google", body.redirectUri);
+      oauthProjects.set(start.state, { projectId: body.projectId, platform: "google" });
+      return sendJson(response, 200, {
+        provider: "google", projectId: body.projectId,
+        authorizationUrl: start.authorizationUrl, state: start.state,
+        permissions: ["Basic profile", "Google Drive metadata (read-only)", "Google Calendar (read-only)"]
+      });
+    }
+
     if (url.pathname === "/v1/connectors/authorize" && request.method === "POST") {
       const body = await readJson(request);
       if (!body.platform || !body.projectId || !body.redirectUri) return sendJson(response, 400, { error: "platform, projectId and redirectUri are required" });
@@ -126,9 +70,9 @@ const server = createServer(async (request, response) => {
       oauthProjects.set(start.state, { projectId: body.projectId, platform: body.platform });
       return sendJson(response, 200, { platform: body.platform, authorizationUrl: start.authorizationUrl, state: start.state });
     }
+
     if (url.pathname === "/v1/connectors/callback" && request.method === "GET") {
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
+      const code = url.searchParams.get("code"), state = url.searchParams.get("state");
       const redirectUri = url.searchParams.get("redirect_uri") ?? process.env.GENESIS_OAUTH_CALLBACK_URL ?? "";
       if (!code || !state || !redirectUri) return sendJson(response, 400, { error: "code, state and redirect URI are required" });
       const target = oauthProjects.get(state);
@@ -140,66 +84,47 @@ const server = createServer(async (request, response) => {
       gateway.approvePlatformAccess(target.projectId, target.platform);
       const { attachConnectorCredentials } = await import("@genesis-ai/ai-gateway/platform-permissions");
       attachConnectorCredentials(target.projectId, target.platform, { accessTokenRef: ref, expiresAt: token.expiresIn ? Date.now() + token.expiresIn * 1000 : undefined });
-      return sendJson(response, 200, { connected: true, platform: target.platform, projectId: target.projectId, scopes: token.scope ? token.scope.split(/[ ,]/).filter(Boolean) : undefined });
+      return sendJson(response, 200, { connected: true, platform: target.platform, projectId: target.projectId, scopes: token.scope?.split(/[ ,]/).filter(Boolean) });
     }
 
-    if (url.pathname === "/v1/platform/access/revoke" && request.method === "POST") {
+    if (url.pathname === "/v1/account/google/disconnect" && request.method === "POST") {
       const body = await readJson(request);
-      return sendJson(response, 200, { revoked: gateway.revokePlatformAccess(body.projectId, body.platformId) });
+      if (!body.projectId) return sendJson(response, 400, { error: "projectId is required" });
+      return sendJson(response, 200, { disconnected: gateway.revokePlatformAccess(body.projectId, "google"), platform: "google" });
     }
 
-    if (url.pathname === "/v1/tools/execute" && request.method === "POST") {
-      const body = await readJson(request);
-      if (typeof body.name !== "string") return sendJson(response, 400, { error: "tool name is required" });
-      return sendJson(response, 200, await gateway.executeTool(body.name, body.input));
+    if (url.pathname === "/v1/mission" && request.method === "POST") {
+      const body = await readJson(request); if (typeof body.objective !== "string" || !body.objective.trim()) return sendJson(response, 400, { error: "objective is required" });
+      return sendJson(response, 201, gateway.createBrainPlan(body.objective));
     }
+    if (url.pathname === "/v1/missions" && request.method === "GET") return sendJson(response, 200, { missions: gateway.listMissions() });
+    const missionMatch = url.pathname.match(/^\/v1\/missions\/([^/]+)$/);
+    if (missionMatch && request.method === "GET") { const mission = gateway.getMission(missionMatch[1]); return mission ? sendJson(response, 200, { mission }) : sendJson(response, 404, { error: "Mission not found" }); }
+    const missionStepMatch = url.pathname.match(/^\/v1\/missions\/([^/]+)\/steps\/([^/]+)$/);
+    if (missionStepMatch && request.method === "POST") { const body = await readJson(request); const allowed = ["pending","running","completed","failed","blocked","approval_required"]; if (!allowed.includes(body.status)) return sendJson(response, 400, { error: "invalid step status" }); const mission = gateway.updateMissionStep(missionStepMatch[1], missionStepMatch[2], body.status); return mission ? sendJson(response, 200, { mission }) : sendJson(response, 404, { error: "Mission or step not found" }); }
+
+    if (url.pathname === "/v1/project/dna" && request.method === "GET") { const projectId = url.searchParams.get("projectId"); if (!projectId) return sendJson(response, 400, { error: "projectId is required" }); return sendJson(response, 200, { dna: gateway.getProjectDNA(projectId) ?? null }); }
+    if (url.pathname === "/v1/project/dna" && request.method === "POST") { const body = await readJson(request); if (!body.projectId) return sendJson(response, 400, { error: "projectId is required" }); return sendJson(response, 200, { dna: gateway.upsertProjectDNA({ projectId: body.projectId, name: body.name, type: body.type, stack: Array.isArray(body.stack)?body.stack:[], integrations: Array.isArray(body.integrations)?body.integrations:[], requirements: Array.isArray(body.requirements)?body.requirements:[], decisions: Array.isArray(body.decisions)?body.decisions:[], knownIssues: Array.isArray(body.knownIssues)?body.knownIssues:[] }) }); }
+    if (url.pathname === "/v1/project/checkpoints" && request.method === "GET") { const projectId = url.searchParams.get("projectId"); if (!projectId) return sendJson(response, 400, { error: "projectId is required" }); return sendJson(response, 200, { checkpoints: gateway.listCheckpoints(projectId), latest: gateway.latestCheckpoint(projectId) ?? null }); }
+    if (url.pathname === "/v1/project/checkpoints" && request.method === "POST") { const body = await readJson(request); if (!body.projectId || !body.label) return sendJson(response, 400, { error: "projectId and label are required" }); return sendJson(response, 201, { checkpoint: gateway.createCheckpoint(body.projectId, body.label, body.snapshotRef) }); }
+    if (url.pathname === "/v1/self-healing/plan" && request.method === "POST") { const body = await readJson(request); if (typeof body.error !== "string" || !body.error.trim()) return sendJson(response, 400, { error: "error is required" }); return sendJson(response, 200, { plan: gateway.createHealingPlan(body.error) }); }
+    if (url.pathname === "/v1/agents/parallel-plan" && request.method === "POST") { const body = await readJson(request); if (typeof body.objective !== "string" || !body.objective.trim()) return sendJson(response, 400, { error: "objective is required" }); return sendJson(response, 200, { tasks: gateway.planParallelAgents(body.objective) }); }
+
+    if (url.pathname === "/v1/platforms" && request.method === "GET") { const { ALL_PLATFORMS } = await import("@genesis-ai/ai-gateway/extended-platforms"); return sendJson(response, 200, { platforms: ALL_PLATFORMS }); }
+    if (url.pathname === "/v1/platform/access/request" && request.method === "POST") { const body = await readJson(request); if (!body.platformId || !body.projectId || !Array.isArray(body.scopes)) return sendJson(response, 400, { error: "platformId, projectId and scopes are required" }); return sendJson(response, 200, gateway.requestPlatformAccess({ platformId: body.platformId, projectId: body.projectId, scopes: body.scopes, reason: typeof body.reason === "string" ? body.reason : "Genesis needs to work on the selected platform." })); }
+    if (url.pathname === "/v1/platform/access/approve" && request.method === "POST") { const body = await readJson(request); if (!body.platformId || !body.projectId) return sendJson(response, 400, { error: "platformId and projectId are required" }); return sendJson(response, 200, gateway.approvePlatformAccess(body.projectId, body.platformId)); }
+    if (url.pathname === "/v1/platform/access/revoke" && request.method === "POST") { const body = await readJson(request); return sendJson(response, 200, { revoked: gateway.revokePlatformAccess(body.projectId, body.platformId) }); }
+
+    if (url.pathname === "/v1/tools/execute" && request.method === "POST") { const body = await readJson(request); if (typeof body.name !== "string") return sendJson(response, 400, { error: "tool name is required" }); return sendJson(response, 200, await gateway.executeTool(body.name, body.input)); }
     if (url.pathname === "/v1/approvals" && request.method === "GET") return sendJson(response, 200, { approvals: gateway.listApprovals() });
-
     const approvalMatch = url.pathname.match(/^\/v1\/approvals\/([^/]+)\/(approve|reject)$/);
     if (approvalMatch && request.method === "POST") return sendJson(response, 200, gateway.decideApproval(approvalMatch[1], approvalMatch[2] === "approve"));
 
-    if (url.pathname === "/v1/research" && request.method === "POST") {
-      const body = await readJson(request);
-      if (typeof body.query !== "string" || !body.query.trim()) return sendJson(response, 400, { error: "valid query is required" });
-      return sendJson(response, 200, await gateway.research(body.query, body.limit));
-    }
-    if (url.pathname === "/v1/route" && request.method === "POST") return sendJson(response, 200, gateway.routeModel(await readJson(request)));
-    if (url.pathname === "/v1/project/validate" && request.method === "POST") return sendJson(response, 200, { errors: gateway.validateProjectSpec(await readJson(request)) });
-    if (url.pathname === "/v1/build/plan" && request.method === "POST") return sendJson(response, 200, gateway.createBuildPlan(await readJson(request)));
-    if (url.pathname === "/v1/game/multiplayer-plan" && request.method === "POST") {
-      const body = await readJson(request);
-      return sendJson(response, 200, gateway.planMultiplayer(body.kind ?? "game"));
-    }
-    if (url.pathname === "/v1/export/targets" && request.method === "GET") return sendJson(response, 200, { targets: gateway.listExportTargets(url.searchParams.get("target") ?? "web") });
-
-    if (url.pathname === "/v1/memory" && request.method === "GET") {
-      const userId = url.searchParams.get("userId");
-      if (!userId) return sendJson(response, 400, { error: "userId is required" });
-      return sendJson(response, 200, { memories: gateway.listMemories(userId) });
-    }
-    if (url.pathname === "/v1/memory" && request.method === "POST") {
-      const body = await readJson(request);
-      if (!body.userId || !body.id || !body.text) return sendJson(response, 400, { error: "userId, id and text are required" });
-      return sendJson(response, 201, gateway.addMemory({ userId: body.userId, id: body.id, text: body.text, tags: Array.isArray(body.tags) ? body.tags : [] }));
-    }
-
-    if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
-      const body = await readJson(request);
-      if (typeof body.model !== "string" || !Array.isArray(body.messages) || !body.messages.length) return sendJson(response, 400, { error: "Invalid chat request" });
-      return sendJson(response, 200, await gateway.chat({
-        model: body.model,
-        messages: body.messages,
-        temperature: typeof body.temperature === "number" ? body.temperature : undefined,
-        maxTokens: typeof body.max_tokens === "number" ? body.max_tokens : undefined
-      }));
-    }
-
+    if (url.pathname === "/v1/research" && request.method === "POST") { const body = await readJson(request); if (typeof body.query !== "string" || !body.query.trim()) return sendJson(response, 400, { error: "query is required" }); return sendJson(response, 200, await gateway.research(body.query, body.limit)); }
+    if (url.pathname === "/v1/chat/completions" && request.method === "POST") { return sendJson(response, 200, await gateway.chat(await readJson(request))); }
     return sendJson(response, 404, { error: "Not found" });
   } catch (error) {
-    console.error(error);
-    if (!response.headersSent) sendJson(response, 500, { error: "Internal server error" });
-    else response.end();
+    return sendJson(response, 500, { error: error instanceof Error ? error.message : "Internal server error" });
   }
 });
-
 server.listen(port, () => console.log(`Genesis API listening on :${port}`));
