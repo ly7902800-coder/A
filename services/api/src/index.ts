@@ -39,7 +39,64 @@ const server = createServer(async (request, response) => {
       ]);
       return sendJson(response, 200, { features: [...GENESIS_FEATURES, ...ADDITIONAL_GENESIS_FEATURES] });
     }
-    if (url.pathname === "/v1/integrations" && request.method === "GET") {\n      const { listIntegrations, listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { integrations: listIntegrations(), statuses: listIntegrationStatuses() });\n    }\n    if (url.pathname === "/v1/integrations/status" && request.method === "GET") {\n      const { listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { statuses: listIntegrationStatuses() });\n    }\n    const integrationTestMatch = url.pathname.match(/^\\/v1\\/integrations\\/([^/]+)\\/test$/);\n    if (integrationTestMatch && request.method === "POST") {\n      return sendJson(response, 200, await gateway.testConnector(integrationTestMatch[1]));\n    }\n    if (url.pathname.startsWith("/v1/integrations/") && request.method === "GET") {\n      const id = url.pathname.slice("/v1/integrations/".length);\n      const { getIntegration, getIntegrationStatus } = await import("@genesis-ai/ai-gateway/integration-registry");\n      const definition = getIntegration(id);\n      if (!definition) return sendJson(response, 404, { error: "Unknown integration" });\n      return sendJson(response, 200, { integration: definition, status: getIntegrationStatus(id) });\n    }\n    if (url.pathname === "/v1/platforms" && request.method === "GET") {
+    if (url.pathname === "/v1/integrations" && request.method === "GET") {\n      const { listIntegrations, listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { integrations: listIntegrations(), statuses: listIntegrationStatuses() });\n    }\n    if (url.pathname === "/v1/integrations/status" && request.method === "GET") {\n      const { listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { statuses: listIntegrationStatuses() });\n    }\n    const integrationTestMatch = url.pathname.match(/^\\/v1\\/integrations\\/([^/]+)\\/test$/);\n    if (integrationTestMatch && request.method === "POST") {\n      return sendJson(response, 200, await gateway.testConnector(integrationTestMatch[1]));\n    }\n    if (url.pathname.startsWith("/v1/integrations/") && request.method === "GET") {\n      const id = url.pathname.slice("/v1/integrations/".length);\n      const { getIntegration, getIntegrationStatus } = await import("@genesis-ai/ai-gateway/integration-registry");\n      const definition = getIntegration(id);\n      if (!definition) return sendJson(response, 404, { error: "Unknown integration" });\n      return sendJson(response, 200, { integration: definition, status: getIntegrationStatus(id) });\n    }\n    if (url.pathname === "/v1/mission" && request.method === "POST") {
+      const body = await readJson(request);
+      if (typeof body.objective !== "string" || !body.objective.trim()) return sendJson(response, 400, { error: "objective is required" });
+      return sendJson(response, 201, gateway.createBrainPlan(body.objective));
+    }
+    if (url.pathname === "/v1/missions" && request.method === "GET") return sendJson(response, 200, { missions: gateway.listMissions() });
+    const missionMatch = url.pathname.match(/^\/v1\/missions\/([^/]+)$/);
+    if (missionMatch && request.method === "GET") {
+      const mission = gateway.getMission(missionMatch[1]);
+      return mission ? sendJson(response, 200, { mission }) : sendJson(response, 404, { error: "Mission not found" });
+    }
+    const missionStepMatch = url.pathname.match(/^\/v1\/missions\/([^/]+)\/steps\/([^/]+)$/);
+    if (missionStepMatch && request.method === "POST") {
+      const body = await readJson(request);
+      const allowed = ["pending","running","completed","failed","blocked","approval_required"];
+      if (!allowed.includes(body.status)) return sendJson(response, 400, { error: "invalid step status" });
+      const mission = gateway.updateMissionStep(missionStepMatch[1], missionStepMatch[2], body.status);
+      return mission ? sendJson(response, 200, { mission }) : sendJson(response, 404, { error: "Mission or step not found" });
+    }
+    if (url.pathname === "/v1/project/dna" && request.method === "GET") {
+      const projectId = url.searchParams.get("projectId");
+      if (!projectId) return sendJson(response, 400, { error: "projectId is required" });
+      return sendJson(response, 200, { dna: gateway.getProjectDNA(projectId) ?? null });
+    }
+    if (url.pathname === "/v1/project/dna" && request.method === "POST") {
+      const body = await readJson(request);
+      if (!body.projectId) return sendJson(response, 400, { error: "projectId is required" });
+      return sendJson(response, 200, { dna: gateway.upsertProjectDNA({
+        projectId: body.projectId, name: body.name, type: body.type,
+        stack: Array.isArray(body.stack) ? body.stack : [],
+        integrations: Array.isArray(body.integrations) ? body.integrations : [],
+        requirements: Array.isArray(body.requirements) ? body.requirements : [],
+        decisions: Array.isArray(body.decisions) ? body.decisions : [],
+        knownIssues: Array.isArray(body.knownIssues) ? body.knownIssues : []
+      }) });
+    }
+    if (url.pathname === "/v1/project/checkpoints" && request.method === "GET") {
+      const projectId = url.searchParams.get("projectId");
+      if (!projectId) return sendJson(response, 400, { error: "projectId is required" });
+      return sendJson(response, 200, { checkpoints: gateway.listCheckpoints(projectId), latest: gateway.latestCheckpoint(projectId) ?? null });
+    }
+    if (url.pathname === "/v1/project/checkpoints" && request.method === "POST") {
+      const body = await readJson(request);
+      if (!body.projectId || !body.label) return sendJson(response, 400, { error: "projectId and label are required" });
+      return sendJson(response, 201, { checkpoint: gateway.createCheckpoint(body.projectId, body.label, body.snapshotRef) });
+    }
+    if (url.pathname === "/v1/self-healing/plan" && request.method === "POST") {
+      const body = await readJson(request);
+      if (typeof body.error !== "string" || !body.error.trim()) return sendJson(response, 400, { error: "error is required" });
+      return sendJson(response, 200, { plan: gateway.createHealingPlan(body.error) });
+    }
+    if (url.pathname === "/v1/agents/parallel-plan" && request.method === "POST") {
+      const body = await readJson(request);
+      if (typeof body.objective !== "string" || !body.objective.trim()) return sendJson(response, 400, { error: "objective is required" });
+      return sendJson(response, 200, { tasks: gateway.planParallelAgents(body.objective) });
+    }
+
+    if (url.pathname === "/v1/platforms" && request.method === "GET") {
       const { ALL_PLATFORMS } = await import("@genesis-ai/ai-gateway/extended-platforms");
       return sendJson(response, 200, { platforms: ALL_PLATFORMS });
     }
