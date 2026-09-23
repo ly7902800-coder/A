@@ -18,6 +18,7 @@ import { createScenePlan } from "./scene-builder.js";
 import { createAnimationPlan } from "./animation-assistant.js";
 import { listExportTargets } from "./exporter.js";
 import { addMemory, listMemories, deleteMemory } from "./memory.js";
+import { requestPlatformAccess, approvePlatformAccess, revokePlatformAccess } from "./platform-permissions.js";
 import type { ChatRequest } from "./types.js";
 
 export function createAiGateway() {
@@ -37,8 +38,7 @@ export function createAiGateway() {
     hasProviderSecret: (provider: ProviderName) => Boolean(getSecretForProvider(provider)),
     chat: (request: ChatRequest) => routeChat(request),
     stream: (request: ChatRequest, onToken: (token: string) => void) => streamChat(request, onToken),
-    runAgents: (objective: string, context: string | undefined, model: string) =>
-      runAgentPipeline(objective, context, model, executor),
+    runAgents: (objective: string, context: string | undefined, model: string) => runAgentPipeline(objective, context, model, executor),
     routeModel,
     createArenaPlan,
     validateProjectSpec: (spec: ProjectSpec) => validateProjectSpec(spec),
@@ -51,7 +51,10 @@ export function createAiGateway() {
     listExportTargets,
     addMemory,
     listMemories,
-    deleteMemory
+    deleteMemory,
+    requestPlatformAccess,
+    approvePlatformAccess,
+    revokePlatformAccess
   };
 }
 
