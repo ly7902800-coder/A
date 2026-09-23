@@ -73,6 +73,20 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/v1/approvals" && request.method === "GET") {
+      sendJson(response, 200, { approvals: gateway.listApprovals() });
+      return;
+    }
+
+    const approvalMatch = url.pathname.match(/^\\/v1\\/approvals\\/([^/]+)\\/(approve|reject)$/);
+    if (approvalMatch && request.method === "POST") {
+      const approvalId = approvalMatch[1];
+      const approved = approvalMatch[2] === "approve";
+      const result = gateway.decideApproval(approvalId, approved);
+      sendJson(response, 200, result);
+      return;
+    }
+
     if (url.pathname === "/v1/research" && request.method === "POST") {
       const body = await readJson(request);
 
