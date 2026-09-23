@@ -8,16 +8,19 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.35.0"
           channel: stable
+          cache: true
 
       - name: Generate Android project
         working-directory: apps/mobile
@@ -27,30 +30,52 @@ jobs:
         working-directory: apps/mobile
         shell: bash
         run: |
+          set -euo pipefail
+
           mkdir -p android/app/src/main/res/drawable
+
           python3 - <<'PY'
           from pathlib import Path
           import re
+
           manifest = Path("android/app/src/main/AndroidManifest.xml")
-          text = manifest.read_text()
-          text = text.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/genesis_icon"')
-          manifest.write_text(text)
-          strings = Path("android/app/src/main/res/values/strings.xml")
-          text = strings.read_text()
-          text = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">Genesis AI</string>', text)
-          strings.write_text(text)
-          Path("android/app/src/main/res/drawable/genesis_icon.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+          text = manifest.read_text(encoding="utf-8")
+
+          text = text.replace(
+              'android:icon="@mipmap/ic_launcher"',
+              'android:icon="@drawable/genesis_icon"'
+          )
+          text = re.sub(
+              r'android:label="[^"]*"',
+              'android:label="Genesis AI"',
+              text,
+              count=1
+          )
+          manifest.write_text(text, encoding="utf-8")
+
+          Path("android/app/src/main/res/drawable/genesis_icon.xml").write_text(
+              """<?xml version="1.0" encoding="utf-8"?>
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp"
               android:height="108dp"
               android:viewportWidth="108"
               android:viewportHeight="108">
-              <path android:fillColor="#080808" android:pathData="M0,0h108v108h-108z"/>
-              <path android:fillColor="#FFFFFF" android:pathData="M54,15l7,28 28,11 -28,11 -7,28 -7,-28 -28,-11 28,-11z"/>
-              <path android:fillColor="#9CA3AF" android:pathData="M88,13h7v7h-7z"/>
-              <path android:fillColor="#9CA3AF" android:pathData="M13,88h5v5h-5z"/>
+              <path
+                  android:fillColor="#080808"
+                  android:pathData="M0,0h108v108h-108z" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M54,15l7,28 28,11 -28,11 -7,28 -7,-28 -28,-11 28,-11z" />
+              <path
+                  android:fillColor="#9CA3AF"
+                  android:pathData="M88,13h7v7h-7z" />
+              <path
+                  android:fillColor="#9CA3AF"
+                  android:pathData="M13,88h5v5h-5z" />
           </vector>
-          """)
+          """,
+              encoding="utf-8",
+          )
           PY
 
       - name: Dependencies
@@ -77,6 +102,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: genesis-android-release
+          if-no-files-found: error
           path: |
             apps/mobile/build/app/outputs/flutter-apk/app-release.apk
             apps/mobile/build/app/outputs/bundle/release/app-release.aab
