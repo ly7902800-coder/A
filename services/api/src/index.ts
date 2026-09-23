@@ -1,18 +1,22 @@
-import { createServer } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createAiGateway } from "@genesis-ai/ai-gateway";
+import { rateLimit, clientKey } from "./security.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const gateway = createAiGateway();
 
-function sendJson(response: import("node:http").ServerResponse, status: number, data: unknown) {
+function sendJson(response: ServerResponse, status: number, data: unknown) {
   response.statusCode = status;
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   response.end(JSON.stringify(data));
 }
 
-async function readJson(request: import("node:http").IncomingMessage) {
+async function readJson(request: IncomingMessage) {
   let body = "";
-  for await (const chunk of request) body += chunk;
+  for await (const chunk of request) {
+    body += chunk;
+    if (body.length > 1_000_000) throw new Error("Request body too large");
+  }
   if (!body) return {};
   return JSON.parse(body);
 }
@@ -20,6 +24,11 @@ async function readJson(request: import("node:http").IncomingMessage) {
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? "/", "http://localhost");
+
+    if (!rateLimit(clientKey(request))) {
+      sendJson(response, 429, { error: "Too many requests" });
+      return;
+    }
 
     if (url.pathname === "/health" && request.method === "GET") {
       sendJson(response, 200, { ok: true, service: "genesis-api" });
@@ -39,8 +48,12 @@ const server = createServer(async (request, response) => {
     if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
       const body = await readJson(request);
 
-      if (typeof body.model !== "string" || !Array.isArray(body.messages)) {
-        sendJson(response, 400, { error: "model and messages are required" });
+      if (
+        typeof body.model !== "string" ||
+        !Array.isArray(body.messages) ||
+        body.messages.length === 0
+      ) {
+        sendJson(response, 400, { error: "model and at least one message are required" });
         return;
       }
 
@@ -57,8 +70,8 @@ const server = createServer(async (request, response) => {
 
     sendJson(response, 404, { error: "Not found" });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error";
-    sendJson(response, 500, { error: message });
+    console.error(error);
+    sendJson(response, 500, { error: "Internal server error" });
   }
 });
 
