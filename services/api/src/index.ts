@@ -25,10 +25,7 @@ function isChatBody(body: any) {
   return typeof body.model === "string" &&
     Array.isArray(body.messages) &&
     body.messages.length > 0 &&
-    body.messages.every((m: any) =>
-      m && ["system", "user", "assistant"].includes(m.role) &&
-      typeof m.content === "string"
-    );
+    body.messages.every((m: any) => m && ["system", "user", "assistant"].includes(m.role) && typeof m.content === "string");
 }
 
 const server = createServer(async (request, response) => {
@@ -44,32 +41,36 @@ const server = createServer(async (request, response) => {
       sendJson(response, 200, { ok: true, service: "genesis-api" });
       return;
     }
-
     if (url.pathname === "/v1/providers" && request.method === "GET") {
       sendJson(response, 200, { providers: gateway.listProviders() });
       return;
     }
-
     if (url.pathname === "/v1/models" && request.method === "GET") {
       sendJson(response, 200, { models: gateway.listModels() });
       return;
     }
-
     if (url.pathname === "/v1/tools" && request.method === "GET") {
       sendJson(response, 200, { tools: gateway.listTools() });
+      return;
+    }
+    if (url.pathname === "/v1/features" && request.method === "GET") {
+      const { GENESIS_FEATURES } = await import("@genesis-ai/ai-gateway/feature-registry");
+      sendJson(response, 200, { features: GENESIS_FEATURES });
+      return;
+    }
+    if (url.pathname === "/v1/platforms" && request.method === "GET") {
+      const { CREATIVE_PLATFORMS } = await import("@genesis-ai/ai-gateway/creative-platforms");
+      sendJson(response, 200, { platforms: CREATIVE_PLATFORMS });
       return;
     }
 
     if (url.pathname === "/v1/tools/execute" && request.method === "POST") {
       const body = await readJson(request);
-
       if (typeof body.name !== "string") {
         sendJson(response, 400, { error: "tool name is required" });
         return;
       }
-
-      const result = await gateway.executeTool(body.name, body.input);
-      sendJson(response, 200, result);
+      sendJson(response, 200, await gateway.executeTool(body.name, body.input));
       return;
     }
 
@@ -78,29 +79,65 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    const approvalMatch = url.pathname.match(/^\\/v1\\/approvals\\/([^/]+)\\/(approve|reject)$/);
+    const approvalMatch = url.pathname.match(/^\/v1\/approvals\/([^/]+)\/(approve|reject)$/);
     if (approvalMatch && request.method === "POST") {
-      const approvalId = approvalMatch[1];
-      const approved = approvalMatch[2] === "approve";
-      const result = gateway.decideApproval(approvalId, approved);
-      sendJson(response, 200, result);
+      sendJson(response, 200, gateway.decideApproval(approvalMatch[1], approvalMatch[2] === "approve"));
       return;
     }
 
     if (url.pathname === "/v1/research" && request.method === "POST") {
       const body = await readJson(request);
-
-      if (
-        typeof body.query !== "string" ||
-        body.query.trim().length === 0 ||
-        body.query.length > 10_000
-      ) {
+      if (typeof body.query !== "string" || body.query.trim().length === 0 || body.query.length > 10_000) {
         sendJson(response, 400, { error: "valid query is required" });
         return;
       }
+      sendJson(response, 200, await gateway.research(body.query, body.limit));
+      return;
+    }
 
-      const result = await gateway.research(body.query, body.limit);
-      sendJson(response, 200, result);
+    if (url.pathname === "/v1/route" && request.method === "POST") {
+      const body = await readJson(request);
+      sendJson(response, 200, gateway.routeModel(body));
+      return;
+    }
+
+    if (url.pathname === "/v1/project/validate" && request.method === "POST") {
+      const body = await readJson(request);
+      sendJson(response, 200, { errors: gateway.validateProjectSpec(body) });
+      return;
+    }
+
+    if (url.pathname === "/v1/build/plan" && request.method === "POST") {
+      const body = await readJson(request);
+      sendJson(response, 200, gateway.createBuildPlan(body));
+      return;
+    }
+
+    if (url.pathname === "/v1/game/multiplayer-plan" && request.method === "POST") {
+      const body = await readJson(request);
+      sendJson(response, 200, gateway.planMultiplayer(body.kind ?? "game"));
+      return;
+    }
+
+    if (url.pathname === "/v1/export/targets" && request.method === "GET") {
+      sendJson(response, 200, { targets: gateway.listExportTargets(url.searchParams.get("target") ?? "web") });
+      return;
+    }
+
+    if (url.pathname === "/v1/memory" && request.method === "GET") {
+      const userId = url.searchParams.get("userId");
+      if (!userId) return sendJson(response, 400, { error: "userId is required" });
+      sendJson(response, 200, { memories: gateway.listMemories(userId) });
+      return;
+    }
+
+    if (url.pathname === "/v1/memory" && request.method === "POST") {
+      const body = await readJson(request);
+      if (typeof body.userId !== "string" || typeof body.id !== "string" || typeof body.text !== "string") {
+        sendJson(response, 400, { error: "userId, id and text are required" });
+        return;
+      }
+      sendJson(response, 201, gateway.addMemory({ userId: body.userId, id: body.id, text: body.text, tags: Array.isArray(body.tags) ? body.tags : [] }));
       return;
     }
 
@@ -110,64 +147,41 @@ const server = createServer(async (request, response) => {
         sendJson(response, 400, { error: "Invalid chat request" });
         return;
       }
-
       const requestData = {
         model: body.model,
         messages: body.messages,
         temperature: typeof body.temperature === "number" ? body.temperature : undefined,
         maxTokens: typeof body.max_tokens === "number" ? body.max_tokens : undefined
       };
-
       if (body.stream === true) {
         response.statusCode = 200;
         response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
-
-        await gateway.stream(requestData, (token) => {
-          response.write(`data: ${JSON.stringify({ token })}\n\n`);
-        });
+        await gateway.stream(requestData, (token) => response.write(`data: ${JSON.stringify({ token })}\n\n`));
         response.write("data: [DONE]\n\n");
         response.end();
         return;
       }
-
-      const result = await gateway.chat(requestData);
-      sendJson(response, 200, result);
+      sendJson(response, 200, await gateway.chat(requestData));
       return;
     }
 
     if (url.pathname === "/v1/agents/run" && request.method === "POST") {
       const body = await readJson(request);
-
-      if (
-        typeof body.objective !== "string" ||
-        body.objective.length === 0 ||
-        body.objective.length > 20_000 ||
-        typeof body.model !== "string"
-      ) {
+      if (typeof body.objective !== "string" || body.objective.length === 0 || body.objective.length > 20_000 || typeof body.model !== "string") {
         sendJson(response, 400, { error: "objective and model are required" });
         return;
       }
-
-      const result = await gateway.runAgents(
-        body.objective,
-        typeof body.context === "string" ? body.context : undefined,
-        body.model
-      );
-
-      sendJson(response, 200, result);
+      sendJson(response, 200, await gateway.runAgents(body.objective, typeof body.context === "string" ? body.context : undefined, body.model));
       return;
     }
 
     sendJson(response, 404, { error: "Not found" });
   } catch (error) {
     console.error(error);
-    if (!response.headersSent) {
-      sendJson(response, 500, { error: "Internal server error" });
-    } else {
-      response.end();
-    }
+    if (!response.headersSent) sendJson(response, 500, { error: "Internal server error" });
+    else response.end();
   }
 });
 
