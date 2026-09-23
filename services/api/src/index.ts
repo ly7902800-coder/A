@@ -5,6 +5,7 @@ import { initDatabase, dbHealth, getDatabase } from "./database/db.js";
 import { signup, login, logout, authenticateToken, bearer } from "./auth.js";
 import { saveMission, listPersistedMissions, saveMemory, listPersistedMemories, deletePersistedMemory, saveChat, getChats, createChat, appendChatMessages, getChatMessages } from "./persistence.js";
 import { runSelfDevelopment } from "@genesis-ai/ai-gateway";
+import { buildWorkerCapabilities, createBuildJob, getBuildJob } from "./build-worker-client.js";
 
 const oauthProjects = new Map<string,{projectId:string;platform:"github"|"cloudflare"|"figma"|"google"|"google-cloud";userId:string}>();
 const port=Number(process.env.PORT??8080);
@@ -35,6 +36,9 @@ const server=createServer(async(request,response)=>{
   if(url.pathname==="/v1/mcp/servers"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.name!=="string"||typeof b.url!=="string")return sendJson(response,400,{error:"name and url are required"});return sendJson(response,201,{server:gateway.registerMcpServer({name:b.name,url:b.url,headers:b.headers&&typeof b.headers==="object"?b.headers:{}})});}
   if(url.pathname==="/v1/mcp/tools"&&request.method==="GET"){await requireAuth(request);return sendJson(response,200,{tools:await gateway.listMcpTools(url.searchParams.get("server")??undefined)});}
   if(url.pathname==="/v1/mcp/call"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.server!=="string"||typeof b.name!=="string")return sendJson(response,400,{error:"server and name are required"});return sendJson(response,200,await gateway.callMcpTool(b.server,b.name,b.arguments&&typeof b.arguments==="object"?b.arguments:{}));}
+  if(url.pathname==="/v1/execution/capabilities"&&request.method==="GET"){await requireAuth(request);return sendJson(response,200,await buildWorkerCapabilities());}
+  if(url.pathname==="/v1/execution/build"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.repo!=="string"||typeof b.branch!=="string"||typeof b.target!=="string")return sendJson(response,400,{error:"repo, branch and target are required"});return sendJson(response,202,await createBuildJob({repo:b.repo,branch:b.branch,target:b.target}));}
+  const execMatch=url.pathname.match(/^\/v1\/execution\/builds\/([^/]+)$/);if(execMatch&&request.method==="GET"){await requireAuth(request);return sendJson(response,200,await getBuildJob(execMatch[1]));}
   if(url.pathname==="/v1/build/plan"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.target!=="string")return sendJson(response,400,{error:"target is required"});return sendJson(response,200,{plan:gateway.createBuildPlan(b.target)});}
   if(url.pathname==="/v1/build/dispatch"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.repo!=="string"||typeof b.branch!=="string"||typeof b.target!=="string")return sendJson(response,400,{error:"repo, branch and target are required"});return sendJson(response,200,await gateway.dispatchBuild(b.repo,b.branch,b.target));}
   if(url.pathname==="/v1/ui/screen"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);return sendJson(response,200,{screen:gateway.uiScreenSpec(typeof b.name==="string"?b.name:"Screen",Array.isArray(b.components)?b.components:[])});}
