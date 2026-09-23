@@ -5,7 +5,9 @@ export type PlatformCategory =
   | "code"
   | "backend"
   | "deployment"
-  | "assets";
+  | "assets"
+  | "xr"
+  | "ai";
 
 export interface CreativePlatform {
   id: string;
@@ -89,6 +91,96 @@ export const CREATIVE_PLATFORMS: CreativePlatform[] = [
     capabilities: ["containers", "databases", "deployments", "logs"],
     adapterStatus: "catalog",
     website: "https://railway.com/"
+  },
+  {
+    id: "openxr",
+    name: "Khronos OpenXR",
+    category: "xr",
+    freeTier: true,
+    capabilities: ["xr", "vr", "ar", "mixed_reality", "cross_runtime"],
+    adapterStatus: "catalog",
+    website: "https://www.khronos.org/openxr/"
+  },
+  {
+    id: "omniverse",
+    name: "NVIDIA Omniverse",
+    category: "3d",
+    freeTier: true,
+    capabilities: ["openusd", "3d", "simulation", "collaboration", "digital_twins", "rtx"],
+    adapterStatus: "catalog",
+    website: "https://www.nvidia.com/en-us/omniverse/"
+  },
+  {
+    id: "threejs",
+    name: "Three.js",
+    category: "3d",
+    freeTier: true,
+    capabilities: ["webgl", "webgpu", "javascript", "typescript", "3d", "web"],
+    adapterStatus: "catalog",
+    website: "https://threejs.org/"
+  },
+  {
+    id: "playcanvas",
+    name: "PlayCanvas",
+    category: "game_engine",
+    freeTier: true,
+    capabilities: ["web", "webgl", "webgpu", "3d", "javascript", "typescript"],
+    adapterStatus: "catalog",
+    website: "https://playcanvas.com/"
+  },
+  {
+    id: "babylonjs",
+    name: "Babylon.js",
+    category: "3d",
+    freeTier: true,
+    capabilities: ["webgl", "webgpu", "typescript", "3d", "xr", "physics"],
+    adapterStatus: "catalog",
+    website: "https://www.babylonjs.com/"
+  },
+  {
+    id: "firebase",
+    name: "Firebase",
+    category: "backend",
+    freeTier: true,
+    capabilities: ["auth", "database", "storage", "cloud_functions", "analytics", "messaging"],
+    adapterStatus: "catalog",
+    website: "https://firebase.google.com/"
+  },
+  {
+    id: "cloudflare",
+    name: "Cloudflare",
+    category: "deployment",
+    freeTier: true,
+    capabilities: ["workers", "pages", "edge", "durable_objects", "r2", "d1"],
+    adapterStatus: "catalog",
+    website: "https://www.cloudflare.com/"
+  },
+  {
+    id: "vercel",
+    name: "Vercel",
+    category: "deployment",
+    freeTier: true,
+    capabilities: ["web", "serverless", "edge", "preview_deployments", "typescript"],
+    adapterStatus: "catalog",
+    website: "https://vercel.com/"
+  },
+  {
+    id: "docker",
+    name: "Docker",
+    category: "deployment",
+    freeTier: true,
+    capabilities: ["containers", "images", "builds", "compose", "portable_runtime"],
+    adapterStatus: "catalog",
+    website: "https://www.docker.com/"
+  },
+  {
+    id: "huggingface",
+    name: "Hugging Face",
+    category: "ai",
+    freeTier: true,
+    capabilities: ["models", "datasets", "inference", "transformers", "spaces", "ai"],
+    adapterStatus: "catalog",
+    website: "https://huggingface.co/"
   }
 ];
 
