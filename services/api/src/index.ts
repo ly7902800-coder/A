@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createAiGateway } from "@genesis-ai/ai-gateway";
 import { rateLimit, clientKey } from "./security.js";
+import { initDatabase, dbHealth } from "./database/db.js";
 
 const oauthProjects = new Map<string,{projectId:string;platform:"github"|"cloudflare"|"figma"|"google"}>();
 const port=Number(process.env.PORT??8080);
@@ -12,7 +13,7 @@ const server=createServer(async(request,response)=>{
  try{
   const url=new URL(request.url??"/","http://localhost");
   if(!rateLimit(clientKey(request)))return sendJson(response,429,{error:"Too many requests"});
-  if(url.pathname==="/health"&&request.method==="GET")return sendJson(response,200,{ok:true,service:"genesis-api"});
+  if(url.pathname==="/health"&&request.method==="GET"){const database=await dbHealth();return sendJson(response,200,{ok:true,service:"genesis-api",database});}
   if(url.pathname==="/v1/providers"&&request.method==="GET")return sendJson(response,200,{providers:gateway.listProviders()});
   if(url.pathname==="/v1/models"&&request.method==="GET")return sendJson(response,200,{models:gateway.listModels()});
   if(url.pathname==="/v1/tools"&&request.method==="GET")return sendJson(response,200,{tools:gateway.listTools()});
@@ -60,4 +61,4 @@ const server=createServer(async(request,response)=>{
   return sendJson(response,404,{error:"Not found"});
  }catch(error){return sendJson(response,500,{error:error instanceof Error?error.message:"Internal server error"});}
 });
-server.listen(port,()=>console.log(`Genesis API listening on :${port}`));
+server.listen(port,async()=>{try{const enabled=await initDatabase();console.log(`Genesis API listening on :${port} database=${enabled?"connected":"not-configured"}`);}catch(error){console.error("Database initialization failed:",error);process.exitCode=1;}});
