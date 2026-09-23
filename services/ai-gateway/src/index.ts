@@ -9,6 +9,7 @@ import { decideApproval, listApprovals, consumeApproval } from "./approvals.js";
 import { research } from "./research.js";
 import { FirecrawlResearchProvider } from "./tool-adapters.js";
 import { routeModel } from "./auto-router.js";
+import { smartRoute } from "./smart-router.js";
 import { createArenaPlan } from "./model-arena.js";
 import { validateProjectSpec, type ProjectSpec } from "./project-spec.js";
 import { createBuildPlan, type BuildRequest } from "./build-pipeline.js";
@@ -44,7 +45,7 @@ export function createAiGateway(){
   listProviders:()=>getProviderConfig(),listModels,discoverModels,listTools:()=>tools.list(),executeTool:(name:string,input:unknown)=>tools.execute(name,input),
   listApprovals:(status?:import("./approvals.js").ApprovalStatus)=>listApprovals(status),decideApproval:(id:string,approved:boolean)=>decideApproval(id,approved),consumeApproval:(id:string)=>consumeApproval(id),
   research:(query:string,limit?:number)=>research(query,researchProvider,limit),hasProviderSecret:(provider:ProviderName)=>Boolean(getSecretForProvider(provider)),
-  chat:(request:ChatRequest)=>routeChat(request),stream:(request:ChatRequest,onToken:(token:string)=>void)=>streamChat(request,onToken),
+  chat:(request:ChatRequest)=>smartRoute(request),stream:(request:ChatRequest,onToken:(token:string)=>void)=>streamChat(request,onToken),
   runAgents:(objective:string,context:string|undefined,model:string)=>runAgentPipeline(objective,context,model,executor),routeModel,createArenaPlan,
   validateProjectSpec:(spec:ProjectSpec)=>validateProjectSpec(spec),createBuildPlan:(request:BuildRequest)=>createBuildPlan(request),createQAChecks,planMultiplayer,createAssetPipeline,createScenePlan,createAnimationPlan,listExportTargets,
   addMemory,listMemories,deleteMemory,requestPlatformAccess,approvePlatformAccess,revokePlatformAccess,
