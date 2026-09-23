@@ -20,6 +20,7 @@ import { listExportTargets } from "./exporter.js";
 import { addMemory, listMemories, deleteMemory } from "./memory.js";
 import { requestPlatformAccess, approvePlatformAccess, revokePlatformAccess } from "./platform-permissions.js";
 import { listOAuthPlatforms, startOAuth, finishOAuth, type OAuthPlatform } from "./oauth-connectors.js";
+import { testConnector, type ConnectorHealth } from "./connector-health.js";
 import type { ChatRequest } from "./types.js";
 
 export function createAiGateway() {
@@ -58,7 +59,8 @@ export function createAiGateway() {
     revokePlatformAccess,
     listOAuthPlatforms,
     startOAuth,
-    finishOAuth: (platform: OAuthPlatform, code: string, state: string, redirectUri: string) => finishOAuth(platform, code, state, redirectUri)
+    finishOAuth: (platform: OAuthPlatform, code: string, state: string, redirectUri: string) => finishOAuth(platform, code, state, redirectUri),
+    testConnector: (id: string): Promise<ConnectorHealth> => testConnector(id)
   };
 }
 
