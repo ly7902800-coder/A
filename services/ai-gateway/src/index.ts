@@ -1,6 +1,6 @@
 import { getProviderConfig, getSecretForProvider, type ProviderName } from "./providers.js";
 import { listModels } from "./models.js";
-import { chat } from "./chat.js";
+import { routeChat } from "./router.js";
 import type { ChatRequest } from "./types.js";
 
 export function createAiGateway() {
@@ -13,7 +13,7 @@ export function createAiGateway() {
       return Boolean(getSecretForProvider(provider));
     },
     chat(request: ChatRequest) {
-      return chat(request);
+      return routeChat(request);
     }
   };
 }
