@@ -13,9 +13,11 @@ export interface ConnectorHealth {
 
 type Check = { url: string; headers?: Record<string,string>; method?: "GET" | "POST"; body?: string };
 
-function bearer(env: string) {
+function bearer(env: string): Record<string,string> {
   const value = process.env[env];
-  return value ? { Authorization: `Bearer ${value}` } : {};
+  const headers: Record<string,string> = {};
+  if (value) headers.Authorization = `Bearer ${value}`;
+  return headers;
 }
 
 async function request(check: Check, timeoutMs = 8000) {
