@@ -3,7 +3,7 @@ import { createAiGateway } from "@genesis-ai/ai-gateway";
 import { rateLimit, clientKey } from "./security.js";
 import { initDatabase, dbHealth, getDatabase } from "./database/db.js";
 import { signup, login, logout, authenticateToken, bearer } from "./auth.js";
-import { saveMission, listPersistedMissions, saveMemory, listPersistedMemories, deletePersistedMemory, saveChat, getChats } from "./persistence.js";
+import { saveMission, listPersistedMissions, saveMemory, listPersistedMemories, deletePersistedMemory, saveChat, getChats, createChat, appendChatMessages, getChatMessages } from "./persistence.js";
 import { runSelfDevelopment } from "@genesis-ai/ai-gateway";
 
 const oauthProjects = new Map<string,{projectId:string;platform:"github"|"cloudflare"|"figma"|"google"|"google-cloud";userId:string}>();
@@ -46,6 +46,9 @@ const server=createServer(async(request,response)=>{
   if(url.pathname==="/v1/memory"&&request.method==="POST"){const user=await requireAuth(request);const b=await readJson(request);if(typeof b.content!=="string"||!b.content.trim())return sendJson(response,400,{error:"content is required"});return sendJson(response,201,{memory:await saveMemory(user.id,typeof b.projectId==="string"?b.projectId:undefined,typeof b.kind==="string"?b.kind:"preference",b.content,typeof b.importance==="number"?b.importance:0.5)});}
   const mem=url.pathname.match(/^\/v1\/memory\/([^/]+)$/);if(mem&&request.method==="DELETE"){const user=await requireAuth(request);return sendJson(response,200,{deleted:await deletePersistedMemory(user.id,mem[1])});}
   if(url.pathname==="/v1/chats"&&request.method==="GET"){const user=await requireAuth(request);return sendJson(response,200,{chats:await getChats(user.id)});}
+  if(url.pathname==="/v1/chats"&&request.method==="POST"){const user=await requireAuth(request);const b=await readJson(request);return sendJson(response,201,{chat:await createChat(user.id,typeof b.projectId==="string"?b.projectId:undefined,typeof b.title==="string"?b.title:"Genesis Chat")});}
+  const chatMatch=url.pathname.match(/^\/v1\/chats\/([^/]+)$/);
+  if(chatMatch&&request.method==="GET"){const user=await requireAuth(request);return sendJson(response,200,await getChatMessages(user.id,chatMatch[1]));}
   if(url.pathname==="/v1/providers"&&request.method==="GET")return sendJson(response,200,{providers:gateway.listProviders()});
   if(url.pathname==="/v1/models"&&request.method==="GET")return sendJson(response,200,{models:gateway.listModels()});
   if(url.pathname==="/v1/models/live"&&request.method==="GET")return sendJson(response,200,await gateway.discoverModels());
@@ -90,7 +93,18 @@ const server=createServer(async(request,response)=>{
   if(url.pathname==="/v1/approvals"&&request.method==="GET")return sendJson(response,200,{approvals:gateway.listApprovals()});
   const am=url.pathname.match(/^\/v1\/approvals\/([^/]+)\/(approve|reject)$/);if(am&&request.method==="POST")return sendJson(response,200,gateway.decideApproval(am[1],am[2]==="approve"));
   if(url.pathname==="/v1/research"&&request.method==="POST"){const b=await readJson(request);if(typeof b.query!=="string"||!b.query.trim())return sendJson(response,400,{error:"query is required"});return sendJson(response,200,await gateway.research(b.query,b.limit));}
-  if(url.pathname==="/v1/chat/completions"&&request.method==="POST"){const user=await requireAuth(request);const b=await readJson(request);const result=await gateway.chat(b);if(Array.isArray(b.messages))await saveChat(user.id,typeof b.projectId==="string"?b.projectId:undefined,[...b.messages,result]);return sendJson(response,200,result);}
+  if(url.pathname==="/v1/chat/completions"&&request.method==="POST"){
+   const user=await requireAuth(request);const b=await readJson(request);
+   if(typeof b.model!=="string"||!b.model.trim())return sendJson(response,400,{error:"model is required"});
+   let messages=Array.isArray(b.messages)?b.messages:[];
+   let conversationId=typeof b.conversationId==="string"?b.conversationId:undefined;
+   if(conversationId){const history=await getChatMessages(user.id,conversationId);messages=history.messages.filter((m:any)=>["system","user","assistant"].includes(m.role)).map((m:any)=>({role:m.role,content:m.content}));}
+   if(!messages.length||messages[messages.length-1].role!=="user")return sendJson(response,400,{error:"messages must contain a user message"});
+   const result=await gateway.chat({...b,messages,conversationId});
+   if(conversationId){await appendChatMessages(user.id,conversationId,[messages[messages.length-1],{role:"assistant",content:result.text,model:result.model,provider:result.provider,metadata:{usage:result.usage}}]);}
+   else {const chat=await createChat(user.id,typeof b.projectId==="string"?b.projectId:undefined,messages.find((m:any)=>m.role==="user")?.content?.slice(0,80));conversationId=chat.id;await appendChatMessages(user.id,conversationId,[...messages,{role:"assistant",content:result.text,model:result.model,provider:result.provider,metadata:{usage:result.usage}}]);}
+   return sendJson(response,200,{...result,conversationId});
+  }
   return sendJson(response,404,{error:"Not found"});
  }catch(error){const status=typeof error==="object"&&error&&"statusCode" in error?Number((error as any).statusCode):500;return sendJson(response,status,{error:error instanceof Error?error.message:"Internal server error"});}
 });
