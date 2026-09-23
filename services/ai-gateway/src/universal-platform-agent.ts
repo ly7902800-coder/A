@@ -13,7 +13,11 @@ const catalog:PlatformTarget[]=[
 {id:"google",name:"Google",domains:["google.com","googleapis.com"],auth:["oauth"],capabilities:["drive","calendar","gmail","docs","sheets","slides","youtube"]},
 {id:"google-ai-studio",name:"Google AI Studio",domains:["aistudio.google.com","ai.google.dev"],auth:["api_key","oauth"],capabilities:["gemini","interactions","multimodal","tools","agents"]},
 {id:"stitch",name:"Google Stitch",domains:["stitch.withgoogle.com","stitch.googleapis.com"],auth:["api_key","oauth"],capabilities:["ui_design","screens","design_systems","variants","html_export"],apiBase:"https://stitch.googleapis.com/mcp",officialApi:"https://stitch.googleapis.com/mcp"},
-{id:"gemini-notebook",name:"Gemini Notebook",domains:["notebooklm.google.com","discoveryengine.googleapis.com"],auth:["oauth"],capabilities:["notebooks","sources","summaries","document_insights"],apiBase:"https://discoveryengine.googleapis.com/v1alpha"}
+{id:"gemini-notebook",name:"Gemini Notebook",domains:["notebooklm.google.com","discoveryengine.googleapis.com"],auth:["oauth"],capabilities:["notebooks","sources","summaries","document_insights"],apiBase:"https://discoveryengine.googleapis.com/v1alpha"},
+{id:"okara",name:"Okara",domains:["okara.ai"],auth:["api_key","browser"],capabilities:["ai_cmo","seo","geo","content","marketing_agents"]},
+{id:"gsc-mcp",name:"Google Search Console MCP",domains:["search.google.com","googleapis.com"],auth:["oauth","connector"],capabilities:["search_console","search_analytics","url_inspection","sitemaps"]},
+{id:"openseo",name:"OpenSEO",domains:["openseo.so","app.openseo.so"],auth:["oauth","api_key"],capabilities:["keyword_research","serp","backlinks","rank_tracking","site_audit","gsc","ai_visibility"],apiBase:"https://app.openseo.so/mcp",officialApi:"https://app.openseo.so/mcp"},
+{id:"geo-optimizer",name:"GEO Optimizer",domains:["geooptimizer.ai","github.com"],auth:["none","browser"],capabilities:["geo_audit","ai_visibility","llms_txt","schema","robots_audit","mcp","content_optimization"]}
 ];
 export function listPlatformTargets(){return catalog;}
 export function discoverPlatform(input:string){const q=input.toLowerCase();return catalog.find(p=>p.id===q||p.name.toLowerCase().includes(q)||p.domains.some(d=>q.includes(d)))??null;}
