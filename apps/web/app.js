@@ -1,0 +1,1 @@
+const send=document.querySelector(".composer button");const box=document.querySelector("textarea");send.addEventListener("click",()=>{if(!box.value.trim())return;alert("تم استلام المهمة. سيتم تنفيذها بعد ربط Authentication وGenesis API.");box.value=""});
