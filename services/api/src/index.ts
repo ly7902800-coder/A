@@ -88,6 +88,29 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/v1/agents/run" && request.method === "POST") {
+      const body = await readJson(request);
+
+      if (
+        typeof body.objective !== "string" ||
+        body.objective.length === 0 ||
+        body.objective.length > 20_000 ||
+        typeof body.model !== "string"
+      ) {
+        sendJson(response, 400, { error: "objective and model are required" });
+        return;
+      }
+
+      const result = await gateway.runAgents(
+        body.objective,
+        typeof body.context === "string" ? body.context : undefined,
+        body.model
+      );
+
+      sendJson(response, 200, result);
+      return;
+    }
+
     sendJson(response, 404, { error: "Not found" });
   } catch (error) {
     console.error(error);
