@@ -55,7 +55,7 @@ async function readFiles(repo:string,ref:string,paths:string[]){
 async function snapshot(repo:string,ref:string){
   const t=await tree(repo,ref);
   const paths=t.map((x:any)=>String(x.path));
-  const priority=paths.filter(p=>/^(services|packages|apps|docs)\//.test(p)&&/\.(ts|tsx|js|jsx|json|md|css|html|yml|yaml|sql)$/.test(p));
+  const priority=paths.filter((p:string)=>/^(services|packages|apps|docs)\//.test(p)&&/\.(ts|tsx|js|jsx|json|md|css|html|yml|yaml|sql)$/.test(p));
   const selected=priority.slice(0,80);
   const files=await readFiles(repo,ref,selected);
   return {tree:paths.slice(0,300),files};
