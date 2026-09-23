@@ -8,8 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @genesis-ai/ai-gateway && npm run build -w @genesis-ai/api",
-    "typecheck": "npm run build -w @genesis-ai/ai-gateway && npm run typecheck -w @genesis-ai/ai-gateway && npm run typecheck -w @genesis-ai/api",
+    "build": "npm run build -w @genesis-ai/ai-gateway && npm run build -w @genesis-ai/api && npm run build -w @genesis-ai/build-worker",
+    "typecheck": "npm run build -w @genesis-ai/ai-gateway && npm run typecheck -w @genesis-ai/ai-gateway && npm run typecheck -w @genesis-ai/api && npm run typecheck -w @genesis-ai/build-worker",
     "test": "npm run test --workspaces --if-present"
   },
   "engines": {
