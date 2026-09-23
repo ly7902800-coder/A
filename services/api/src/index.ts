@@ -21,6 +21,16 @@ async function readJson(request: IncomingMessage) {
   return JSON.parse(body);
 }
 
+function isChatBody(body: any) {
+  return typeof body.model === "string" &&
+    Array.isArray(body.messages) &&
+    body.messages.length > 0 &&
+    body.messages.every((m: any) =>
+      m && ["system", "user", "assistant"].includes(m.role) &&
+      typeof m.content === "string"
+    );
+}
+
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? "/", "http://localhost");
@@ -47,23 +57,33 @@ const server = createServer(async (request, response) => {
 
     if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
       const body = await readJson(request);
-
-      if (
-        typeof body.model !== "string" ||
-        !Array.isArray(body.messages) ||
-        body.messages.length === 0
-      ) {
-        sendJson(response, 400, { error: "model and at least one message are required" });
+      if (!isChatBody(body)) {
+        sendJson(response, 400, { error: "Invalid chat request" });
         return;
       }
 
-      const result = await gateway.chat({
+      const requestData = {
         model: body.model,
         messages: body.messages,
         temperature: typeof body.temperature === "number" ? body.temperature : undefined,
         maxTokens: typeof body.max_tokens === "number" ? body.max_tokens : undefined
-      });
+      };
 
+      if (body.stream === true) {
+        response.statusCode = 200;
+        response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
+
+        await gateway.stream(requestData, (token) => {
+          response.write(`data: ${JSON.stringify({ token })}\n\n`);
+        });
+        response.write("data: [DONE]\n\n");
+        response.end();
+        return;
+      }
+
+      const result = await gateway.chat(requestData);
       sendJson(response, 200, result);
       return;
     }
@@ -71,7 +91,11 @@ const server = createServer(async (request, response) => {
     sendJson(response, 404, { error: "Not found" });
   } catch (error) {
     console.error(error);
-    sendJson(response, 500, { error: "Internal server error" });
+    if (!response.headersSent) {
+      sendJson(response, 500, { error: "Internal server error" });
+    } else {
+      response.end();
+    }
   }
 });
 
