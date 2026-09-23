@@ -1,0 +1,19 @@
+name: Genesis Android APK
+on:
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.0"
+          channel: stable
+      - run: cd apps/mobile && flutter pub get
+      - run: cd apps/mobile && flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: genesis-ai-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
