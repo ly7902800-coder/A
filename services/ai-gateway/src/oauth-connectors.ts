@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-export type OAuthPlatform = "github" | "cloudflare" | "figma" | "google";
+export type OAuthPlatform = "github" | "cloudflare" | "figma" | "google" | "google-cloud";
 
 export interface OAuthConfig { platform:OAuthPlatform; clientId:string; clientSecret?:string; authorizationUrl:string; tokenUrl:string; scopes:string[]; usePkce:boolean; }
 export interface OAuthStart { platform:OAuthPlatform; state:string; codeVerifier?:string; authorizationUrl:string; }
@@ -19,17 +19,19 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/presentations",
   "https://www.googleapis.com/auth/youtube"
 ];
+const GOOGLE_CLOUD_SCOPES = ["openid","email","profile","https://www.googleapis.com/auth/cloud-platform"];
 
 function config(platform:OAuthPlatform):OAuthConfig {
   if(platform==="github") return {platform,clientId:process.env.GITHUB_OAUTH_CLIENT_ID??"",clientSecret:process.env.GITHUB_OAUTH_CLIENT_SECRET,authorizationUrl:"https://github.com/login/oauth/authorize",tokenUrl:"https://github.com/login/oauth/access_token",scopes:["read:user","user:email","repo"],usePkce:true};
   if(platform==="cloudflare") return {platform,clientId:process.env.CLOUDFLARE_OAUTH_CLIENT_ID??"",clientSecret:process.env.CLOUDFLARE_OAUTH_CLIENT_SECRET,authorizationUrl:"https://dash.cloudflare.com/oauth2/auth",tokenUrl:"https://dash.cloudflare.com/oauth2/token",scopes:["account:read","zone:read"],usePkce:true};
   if(platform==="figma") return {platform,clientId:process.env.FIGMA_OAUTH_CLIENT_ID??"",clientSecret:process.env.FIGMA_OAUTH_CLIENT_SECRET,authorizationUrl:"https://www.figma.com/oauth",tokenUrl:"https://api.figma.com/v1/oauth/token",scopes:["file_content:read","file_metadata:read"],usePkce:true};
+  if(platform==="google-cloud") return {platform,clientId:process.env.GOOGLE_OAUTH_CLIENT_ID??"",clientSecret:process.env.GOOGLE_OAUTH_CLIENT_SECRET,authorizationUrl:"https://accounts.google.com/o/oauth2/v2/auth",tokenUrl:"https://oauth2.googleapis.com/token",scopes:GOOGLE_CLOUD_SCOPES,usePkce:true};
   return {platform,clientId:process.env.GOOGLE_OAUTH_CLIENT_ID??"",clientSecret:process.env.GOOGLE_OAUTH_CLIENT_SECRET,authorizationUrl:"https://accounts.google.com/o/oauth2/v2/auth",tokenUrl:"https://oauth2.googleapis.com/token",scopes:GOOGLE_SCOPES,usePkce:true};
 }
 function base64url(value:Buffer){return value.toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");}
 function pkce(){const verifier=base64url(crypto.randomBytes(32));return {verifier,challenge:base64url(crypto.createHash("sha256").update(verifier).digest())};}
 
-export function listOAuthPlatforms(){return(["github","cloudflare","figma","google"] as OAuthPlatform[]).map(platform=>{const c=config(platform);return{platform,configured:Boolean(c.clientId&&c.clientSecret),authorizationUrl:c.authorizationUrl,scopes:c.scopes,pkce:c.usePkce};});}
+export function listOAuthPlatforms(){return(["github","cloudflare","figma","google","google-cloud"] as OAuthPlatform[]).map(platform=>{const c=config(platform);return{platform,configured:Boolean(c.clientId&&c.clientSecret),authorizationUrl:c.authorizationUrl,scopes:c.scopes,pkce:c.usePkce};});}
 
 export function startOAuth(platform:OAuthPlatform,redirectUri:string):OAuthStart{
   const c=config(platform); if(!c.clientId) throw new Error(`Missing OAuth client id for ${platform}`);
