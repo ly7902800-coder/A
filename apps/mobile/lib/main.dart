@@ -1,32 +1,5 @@
 import 'package:flutter/material.dart';
-
 void main()=>runApp(const GenesisApp());
-
-class GenesisApp extends StatelessWidget{
- const GenesisApp({super.key});
- @override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false,theme:ThemeData.dark(useMaterial3:true),home:const GenesisHome());
-}
-
-class GenesisHome extends StatelessWidget{
- const GenesisHome({super.key});
- final modules=const ["Chat","Projects","AI Studio","Files","Source Code","UI Designer","Integrations","Build","Testing","Logs","Releases","Credentials","Settings"];
- @override Widget build(BuildContext c)=>Scaffold(
-  appBar:AppBar(title:const Text("✦ Genesis AI"),actions:[IconButton(onPressed:()=>showModalBottomSheet(context:c,builder:(_)=>const GooglePanel()),icon:const Icon(Icons.account_circle))]),
-  drawer:Drawer(child:ListView(children:[const DrawerHeader(child:Text("Genesis AI",style:TextStyle(fontSize:28))),...modules.map((x)=>ListTile(title:Text(x)))])),
-  body:Center(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
-   const Text("ماذا تريد أن أبني؟",style:TextStyle(fontSize:30,fontWeight:FontWeight.bold),textAlign:TextAlign.center),
-   const SizedBox(height:14),const Text("Genesis يخطط للمهمة ويطلب الموافقة قبل أي إجراء خارجي.",textAlign:TextAlign.center),
-   const SizedBox(height:24),TextField(maxLines:4,decoration:InputDecoration(hintText:"مثال: ابنِ تطبيقًا على FlutterFlow...",border:OutlineInputBorder(borderRadius:BorderRadius.circular(18))))
-  ]))
- );
-}
-
-class GooglePanel extends StatelessWidget{
- const GooglePanel({super.key});
- @override Widget build(BuildContext c)=>Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
-  const Text("Google Account",style:TextStyle(fontSize:24,fontWeight:FontWeight.bold)),
-  const SizedBox(height:10),const Text("غير متصل"),
-  const SizedBox(height:10),FilledButton(onPressed:(){},child:const Text("Connect Google")),
-  const Text("سيتم تحويلك إلى Google للموافقة على الصلاحيات.")
- ]));
-}
+class GenesisApp extends StatelessWidget{const GenesisApp({super.key});@override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'Genesis AI',theme:ThemeData(brightness:Brightness.dark,useMaterial3:true,scaffoldBackgroundColor:const Color(0xFF080808)),home:const GenesisHome());}
+class GenesisHome extends StatefulWidget{const GenesisHome({super.key});@override State<GenesisHome> createState()=>_GenesisHomeState();}
+class _GenesisHomeState extends State<GenesisHome>{final c=TextEditingController();final messages=<String>[];@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Genesis AI'),actions:[IconButton(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Settings'))),icon:const Icon(Icons.settings_outlined))]),drawer:Drawer(child:ListView(children:[const DrawerHeader(child:Text('Genesis AI',style:TextStyle(fontSize:28))),for(final item in ['Chat','Projects','AI Studio','Files','Source Code','UI Designer','Build','Testing','Logs','Releases','Credentials'])ListTile(title:Text(item),leading:const Icon(Icons.circle_outlined),onTap:()=>Navigator.pop(context))])),body:Column(children:[const Expanded(child:Center(child:Padding(padding:EdgeInsets.all(32),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome,size:64),SizedBox(height:20),Text('ماذا تريد أن أبني؟',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold),textAlign:TextAlign.center),SizedBox(height:10),Text('اكتب فكرتك وسيتولى Genesis التخطيط والتنفيذ والاختبار.',textAlign:TextAlign.center)])))),if(messages.isNotEmpty)SizedBox(height:120,child:ListView(children:messages.map((m)=>ListTile(title:Text(m))).toList())),Padding(padding:const EdgeInsets.all(12),child:Row(children:[Expanded(child:TextField(controller:c,minLines:1,maxLines:4,decoration:const InputDecoration(hintText:'اكتب طلبك...',border:OutlineInputBorder()))),IconButton(icon:const Icon(Icons.send),onPressed:(){if(c.text.trim().isEmpty)return;setState((){messages.add(c.text.trim());c.clear();});})]))]);}}
