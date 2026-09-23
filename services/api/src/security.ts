@@ -19,5 +19,7 @@ export function rateLimit(key: string): boolean {
 
 export function clientKey(request: import("node:http").IncomingMessage): string {
   const forwarded = request.headers["x-forwarded-for"];
-  return typeof forwarded === "string" ? forwarded.split(",")[0].trim() : request.socket.remoteAddress ?? "unknown";
+  return typeof forwarded === "string"
+    ? forwarded.split(",")[0].trim()
+    : request.socket.remoteAddress ?? "unknown";
 }
