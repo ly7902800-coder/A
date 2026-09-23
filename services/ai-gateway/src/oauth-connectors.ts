@@ -5,7 +5,7 @@ export type OAuthPlatform = "github" | "cloudflare" | "figma" | "google" | "goog
 export interface OAuthConfig { platform:OAuthPlatform; clientId:string; clientSecret?:string; authorizationUrl:string; tokenUrl:string; scopes:string[]; usePkce:boolean; }
 export interface OAuthStart { platform:OAuthPlatform; state:string; codeVerifier?:string; authorizationUrl:string; }
 
-const pending = new Map<string,{platform:OAuthPlatform;codeVerifier?:string;createdAt:number}>();
+const pending = new Map<string,{platform:OAuthPlatform;codeVerifier?:string;createdAt:number;redirectUri:string}>();
 
 const GOOGLE_SCOPES = [
   "openid","email","profile",
@@ -36,7 +36,7 @@ export function listOAuthPlatforms(){return(["github","cloudflare","figma","goog
 export function startOAuth(platform:OAuthPlatform,redirectUri:string):OAuthStart{
   const c=config(platform); if(!c.clientId) throw new Error(`Missing OAuth client id for ${platform}`);
   const state=base64url(crypto.randomBytes(24));const pair=c.usePkce?pkce():undefined;
-  pending.set(state,{platform,codeVerifier:pair?.verifier,createdAt:Date.now()});
+  pending.set(state,{platform,codeVerifier:pair?.verifier,createdAt:Date.now(),redirectUri});
   const url=new URL(c.authorizationUrl);url.searchParams.set("client_id",c.clientId);url.searchParams.set("redirect_uri",redirectUri);url.searchParams.set("response_type","code");url.searchParams.set("state",state);
   if(pair){url.searchParams.set("code_challenge",pair.challenge);url.searchParams.set("code_challenge_method","S256");}
   url.searchParams.set("scope",c.scopes.join(" "));
@@ -45,7 +45,7 @@ export function startOAuth(platform:OAuthPlatform,redirectUri:string):OAuthStart
 }
 
 export async function finishOAuth(platform:OAuthPlatform,code:string,state:string,redirectUri:string){
-  const p=pending.get(state);if(!p||p.platform!==platform||Date.now()-p.createdAt>10*60_000)throw new Error("Invalid or expired OAuth state");pending.delete(state);
+  const p=pending.get(state);if(!p||p.platform!==platform||p.redirectUri!==redirectUri||Date.now()-p.createdAt>10*60_000)throw new Error("Invalid or expired OAuth state");pending.delete(state);
   const c=config(platform);if(!c.clientId)throw new Error(`Missing OAuth client id for ${platform}`);
   const body=new URLSearchParams({client_id:c.clientId,code,redirect_uri:redirectUri,grant_type:"authorization_code"});if(c.clientSecret)body.set("client_secret",c.clientSecret);if(p.codeVerifier)body.set("code_verifier",p.codeVerifier);
   const response=await fetch(c.tokenUrl,{method:"POST",headers:{"Accept":"application/json","Content-Type":"application/x-www-form-urlencoded"},body});
