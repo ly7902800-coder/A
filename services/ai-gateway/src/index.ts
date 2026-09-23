@@ -63,4 +63,5 @@ export function createAiGateway(){
   runSelfDevelopment
  };
 }
+export { runSelfDevelopment } from "./self-development-engine.js";
 export type { ChatRequest, ChatResponse, ModelDescriptor, ProviderName } from "./types.js";
