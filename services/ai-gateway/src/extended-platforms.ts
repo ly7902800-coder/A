@@ -35,7 +35,7 @@ const EXTRA_PLATFORMS: ExtendedPlatform[] = [
   ["kubernetes","Kubernetes","deployment",true,["orchestration","scaling","service_discovery"],"https://kubernetes.io/"],
   ["terraform","Terraform","deployment",true,["infrastructure_as_code","cloud","provisioning"],"https://www.terraform.io/"],
   ["ansible","Ansible","deployment",true,["automation","configuration","provisioning"],"https://www.ansible.com/"],
-  ["khronos-vulkan","Vulkan","code",true,["graphics","compute","cross_platform"],"https://www.vulkan.org/"
+  ["khronos-vulkan","Vulkan","code",true,["graphics","compute","cross_platform"],"https://www.vulkan.org/"]
 ];
 
 export const EXTENDED_PLATFORMS: ExtendedPlatform[] = EXTRA_PLATFORMS.map(
