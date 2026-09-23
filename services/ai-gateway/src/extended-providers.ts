@@ -55,7 +55,7 @@ export async function chatExtended(request: ChatRequest): Promise<ChatResponse> 
     const data = await response.json() as any;
     const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? "").join("") ?? "";
     if (!text) throw new Error("Unexpected gemini response format");
-    return { provider: "openrouter", model: request.model, text };
+    return { provider, model: request.model, text };
   }
 
   if (provider === "anthropic") {
