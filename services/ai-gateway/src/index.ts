@@ -4,6 +4,7 @@ import { routeChat } from "./router.js";
 import { streamChat } from "./stream.js";
 import { runAgentPipeline } from "./orchestrator.js";
 import { createDefaultToolRegistry } from "./tools.js";
+import { decideApproval, listApprovals, consumeApproval } from "./approvals.js";
 import { research } from "./research.js";
 import { FirecrawlResearchProvider } from "./tool-adapters.js";
 import type { ChatRequest } from "./types.js";
@@ -25,6 +26,15 @@ export function createAiGateway() {
     },
     executeTool(name: string, input: unknown) {
       return tools.execute(name, input);
+    },
+    listApprovals(status?: import("./approvals.js").ApprovalStatus) {
+      return listApprovals(status);
+    },
+    decideApproval(id: string, approved: boolean) {
+      return decideApproval(id, approved);
+    },
+    consumeApproval(id: string) {
+      return consumeApproval(id);
     },
     research(query: string, limit?: number) {
       return research(query, researchProvider, limit);
