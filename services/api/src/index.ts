@@ -73,6 +73,23 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/v1/research" && request.method === "POST") {
+      const body = await readJson(request);
+
+      if (
+        typeof body.query !== "string" ||
+        body.query.trim().length === 0 ||
+        body.query.length > 10_000
+      ) {
+        sendJson(response, 400, { error: "valid query is required" });
+        return;
+      }
+
+      const result = await gateway.research(body.query, body.limit);
+      sendJson(response, 200, result);
+      return;
+    }
+
     if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
       const body = await readJson(request);
       if (!isChatBody(body)) {
