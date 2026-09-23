@@ -9,7 +9,7 @@ const gateway=createAiGateway();
 function sendJson(response:ServerResponse,status:number,data:unknown){response.statusCode=status;response.setHeader("Content-Type","application/json; charset=utf-8");response.end(JSON.stringify(data));}
 async function readJson(request:IncomingMessage){let body="";for await(const chunk of request){body+=chunk;if(body.length>1_000_000)throw new Error("Request body too large");}return body?JSON.parse(body):{};}
 
-const server=createServer(async(request,response)=>{
+const server=createServer(async(request,response)=>{\n  response.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN ?? "*");\n  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");\n  response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");\n  if(request.method==="OPTIONS"){response.statusCode=204;return response.end();}
  try{
   const url=new URL(request.url??"/","http://localhost");
   if(!rateLimit(clientKey(request)))return sendJson(response,429,{error:"Too many requests"});
