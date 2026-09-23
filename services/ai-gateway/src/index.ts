@@ -31,6 +31,7 @@ import { listPlatformTargets, discoverPlatform, planPlatformMission } from "./un
 import { createBrowserSession, browserPolicy } from "./browser-cloud-agent.js";
 import { listConnectors, resolveConnector, createIntegrationPlan } from "./connector-engine.js";
 import { executePlatformMission } from "./platform-executor.js";
+import { executeConnectorAction, type ConnectorActionInput } from "./connector-actions.js";
 import type { ChatRequest } from "./types.js";
 
 export function createAiGateway(){
@@ -47,7 +48,8 @@ export function createAiGateway(){
   addMemory,listMemories,deleteMemory,requestPlatformAccess,approvePlatformAccess,revokePlatformAccess,
   listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
-  listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission
+  listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
+  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input)
  };
 }
 export type { ChatRequest, ChatResponse, ModelDescriptor, ProviderName } from "./types.js";
