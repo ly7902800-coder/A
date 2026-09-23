@@ -39,7 +39,7 @@ const server = createServer(async (request, response) => {
       ]);
       return sendJson(response, 200, { features: [...GENESIS_FEATURES, ...ADDITIONAL_GENESIS_FEATURES] });
     }
-    if (url.pathname === "/v1/platforms" && request.method === "GET") {
+    if (url.pathname === "/v1/integrations" && request.method === "GET") {\n      const { listIntegrations, listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { integrations: listIntegrations(), statuses: listIntegrationStatuses() });\n    }\n    if (url.pathname === "/v1/integrations/status" && request.method === "GET") {\n      const { listIntegrationStatuses } = await import("@genesis-ai/ai-gateway/integration-registry");\n      return sendJson(response, 200, { statuses: listIntegrationStatuses() });\n    }\n    if (url.pathname.startsWith("/v1/integrations/") && request.method === "GET") {\n      const id = url.pathname.slice("/v1/integrations/".length);\n      const { getIntegration, getIntegrationStatus } = await import("@genesis-ai/ai-gateway/integration-registry");\n      const definition = getIntegration(id);\n      if (!definition) return sendJson(response, 404, { error: "Unknown integration" });\n      return sendJson(response, 200, { integration: definition, status: getIntegrationStatus(id) });\n    }\n    if (url.pathname === "/v1/platforms" && request.method === "GET") {
       const { ALL_PLATFORMS } = await import("@genesis-ai/ai-gateway/extended-platforms");
       return sendJson(response, 200, { platforms: ALL_PLATFORMS });
     }
