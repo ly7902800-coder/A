@@ -10,7 +10,10 @@ const catalog:PlatformTarget[]=[
 {id:"supabase",name:"Supabase",domains:["supabase.com","api.supabase.com"],auth:["api_key","browser"],capabilities:["projects","database","auth","storage","functions"]},
 {id:"firebase",name:"Firebase",domains:["firebase.google.com","firebase.googleapis.com"],auth:["api_key","browser"],capabilities:["projects","database","auth","hosting","functions"]},
 {id:"cloudflare",name:"Cloudflare",domains:["cloudflare.com","api.cloudflare.com"],auth:["oauth","api_key"],capabilities:["zones","workers","dns","deploy"]},
-{id:"google",name:"Google",domains:["google.com","googleapis.com"],auth:["oauth"],capabilities:["drive","calendar","gmail","docs","sheets","slides","youtube"]}
+{id:"google",name:"Google",domains:["google.com","googleapis.com"],auth:["oauth"],capabilities:["drive","calendar","gmail","docs","sheets","slides","youtube"]},
+{id:"google-ai-studio",name:"Google AI Studio",domains:["aistudio.google.com","ai.google.dev"],auth:["api_key","oauth"],capabilities:["gemini","interactions","multimodal","tools","agents"]},
+{id:"stitch",name:"Google Stitch",domains:["stitch.withgoogle.com","stitch.googleapis.com"],auth:["api_key","oauth"],capabilities:["ui_design","screens","design_systems","variants","html_export"],apiBase:"https://stitch.googleapis.com/mcp",officialApi:"https://stitch.googleapis.com/mcp"},
+{id:"gemini-notebook",name:"Gemini Notebook",domains:["notebooklm.google.com","discoveryengine.googleapis.com"],auth:["oauth"],capabilities:["notebooks","sources","summaries","document_insights"],apiBase:"https://discoveryengine.googleapis.com/v1alpha"}
 ];
 export function listPlatformTargets(){return catalog;}
 export function discoverPlatform(input:string){const q=input.toLowerCase();return catalog.find(p=>p.id===q||p.name.toLowerCase().includes(q)||p.domains.some(d=>q.includes(d)))??null;}
