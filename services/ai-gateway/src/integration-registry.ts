@@ -83,7 +83,7 @@ const defs: IntegrationDefinition[] = [
   {id:"gsc-mcp",auth:"oauth",env:["GSC_CREDENTIALS_PATH"],capabilities:["search_console","search_analytics","url_inspection","sitemaps"],status:"credential_required"},
   {id:"openseo",auth:"oauth",env:["OPENSEO_MCP_URL"],capabilities:["keyword_research","serp","backlinks","rank_tracking","site_audit","gsc","ai_visibility"],status:"credential_required"},
   {id:"geo-optimizer",auth:"none",capabilities:["geo_audit","ai_visibility","llms_txt","schema","robots_audit","mcp","content_optimization"],status:"catalog_only"},
-  {id:"mcp-hub",auth:"none",capabilities:["mcp_discovery","tool_registry","server_routing","tool_permissions"],status:"ready"},
+  {id:"mcp-hub",auth:"none",capabilities:["mcp_discovery","tool_registry","server_routing","tool_permissions"],status:"implemented"},
   {id:"tool-router",auth:"none",capabilities:["intent_routing","tool_selection","fallbacks","parallel_tools"],status:"ready"},
   {id:"mission-engine",auth:"none",capabilities:["missions","plans","checkpoints","retries","approvals"],status:"ready"},
   {id:"multi-agent-orchestrator",auth:"none",capabilities:["planner","architect","coder","reviewer","security","qa","devops","parallel_agents"],status:"ready"},
