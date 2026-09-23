@@ -59,7 +59,7 @@ export function createAiGateway(){
   listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
   listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,requestAccountAccess,approveAccountAccess,revokeAccountAccess,listAccountAccess,createLinkedBrowserSession,approveLinkedBrowserSession,getLinkedBrowserSession,revokeLinkedBrowserSession,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
-  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam,runOpenAIAgent,createBuildPlan,dispatchBuild,uiScreenSpec,seoGeoAudit,
+  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam ,runOpenAIAgent,dispatchBuild,uiScreenSpec,seoGeoAudit,
   runSelfDevelopment
  };
 }
