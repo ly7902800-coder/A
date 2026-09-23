@@ -5,7 +5,7 @@ export interface IntegrationDefinition {
   auth: IntegrationAuth;
   env?: string[];
   capabilities: string[];
-  status: "implemented" | "credential_required" | "catalog_only";
+  status: "implemented" | "credential_required" | "catalog_only" | "ready";
   notes?: string;
 }
 
