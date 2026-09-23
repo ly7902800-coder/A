@@ -32,7 +32,7 @@ async function createSession(u:any){
  await db.query("INSERT INTO user_sessions(user_id,token_hash,expires_at) VALUES($1,$2,$3)",[u.id,tokenHash(token),expires]);
  return {token,expiresAt:expires.toISOString(),user:{id:u.id,email:u.email,displayName:u.display_name??null}};
 }
-export async function authenticateToken(token:string):Promise<AuthUser|null>{
+export async function authenticateToken(token:string|undefined):Promise<AuthUser|null>{
  const db=getDatabase();if(!db||!token)return null;
  const r=await db.query("SELECT u.id,u.email,u.display_name FROM user_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now()",[tokenHash(token)]);
  return r.rows[0]?{id:r.rows[0].id,email:r.rows[0].email,displayName:r.rows[0].display_name}:null;
