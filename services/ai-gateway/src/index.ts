@@ -40,6 +40,7 @@ import { executeCodingTask } from "./coding-agent.js";
 import { registerMcpServer, listMcpServers, listMcpTools, callMcpTool, disconnectMcpServer } from "./mcp-hub.js";
 import { runMultiAgentTeam } from "./multi-agent-runtime.js";
 import { runOpenAIAgent } from "./openai-agents-sdk.js";
+import { createBuildPlan, dispatchBuild, uiScreenSpec, seoGeoAudit } from "./platform-factory.js";
 
 export function createAiGateway(){
  const executor={execute:(request:ChatRequest)=>routeChat(request)};
@@ -56,7 +57,7 @@ export function createAiGateway(){
   listOAuthPlatforms,startOAuth,finishOAuth:(platform:OAuthPlatform,code:string,state:string,redirectUri:string)=>finishOAuth(platform,code,state,redirectUri),testConnector:(id:string):Promise<ConnectorHealth>=>testConnector(id),
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
   listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,requestAccountAccess,approveAccountAccess,revokeAccountAccess,listAccountAccess,createLinkedBrowserSession,approveLinkedBrowserSession,getLinkedBrowserSession,revokeLinkedBrowserSession,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
-  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam,runOpenAIAgent
+  executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam,runOpenAIAgent,createBuildPlan,dispatchBuild,uiScreenSpec,seoGeoAudit
  };
 }
 export type { ChatRequest, ChatResponse, ModelDescriptor, ProviderName } from "./types.js";
