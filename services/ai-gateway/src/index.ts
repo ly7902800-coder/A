@@ -7,50 +7,51 @@ import { createDefaultToolRegistry } from "./tools.js";
 import { decideApproval, listApprovals, consumeApproval } from "./approvals.js";
 import { research } from "./research.js";
 import { FirecrawlResearchProvider } from "./tool-adapters.js";
+import { routeModel } from "./auto-router.js";
+import { createArenaPlan } from "./model-arena.js";
+import { validateProjectSpec, type ProjectSpec } from "./project-spec.js";
+import { createBuildPlan, type BuildRequest } from "./build-pipeline.js";
+import { createQAChecks } from "./qa-agent.js";
+import { planMultiplayer } from "./multiplayer.js";
+import { createAssetPipeline } from "./asset-pipeline.js";
+import { createScenePlan } from "./scene-builder.js";
+import { createAnimationPlan } from "./animation-assistant.js";
+import { listExportTargets } from "./exporter.js";
+import { addMemory, listMemories, deleteMemory } from "./memory.js";
 import type { ChatRequest } from "./types.js";
 
 export function createAiGateway() {
-  const executor = {
-    execute: (request: ChatRequest) => routeChat(request)
-  };
+  const executor = { execute: (request: ChatRequest) => routeChat(request) };
   const tools = createDefaultToolRegistry();
   const researchProvider = new FirecrawlResearchProvider(process.env.FIRECRAWL_API_KEY);
 
   return {
-    listProviders() {
-      return getProviderConfig();
-    },
+    listProviders: () => getProviderConfig(),
     listModels,
-    listTools() {
-      return tools.list();
-    },
-    executeTool(name: string, input: unknown) {
-      return tools.execute(name, input);
-    },
-    listApprovals(status?: import("./approvals.js").ApprovalStatus) {
-      return listApprovals(status);
-    },
-    decideApproval(id: string, approved: boolean) {
-      return decideApproval(id, approved);
-    },
-    consumeApproval(id: string) {
-      return consumeApproval(id);
-    },
-    research(query: string, limit?: number) {
-      return research(query, researchProvider, limit);
-    },
-    hasProviderSecret(provider: ProviderName) {
-      return Boolean(getSecretForProvider(provider));
-    },
-    chat(request: ChatRequest) {
-      return routeChat(request);
-    },
-    stream(request: ChatRequest, onToken: (token: string) => void) {
-      return streamChat(request, onToken);
-    },
-    runAgents(objective: string, context: string | undefined, model: string) {
-      return runAgentPipeline(objective, context, model, executor);
-    }
+    listTools: () => tools.list(),
+    executeTool: (name: string, input: unknown) => tools.execute(name, input),
+    listApprovals: (status?: import("./approvals.js").ApprovalStatus) => listApprovals(status),
+    decideApproval: (id: string, approved: boolean) => decideApproval(id, approved),
+    consumeApproval: (id: string) => consumeApproval(id),
+    research: (query: string, limit?: number) => research(query, researchProvider, limit),
+    hasProviderSecret: (provider: ProviderName) => Boolean(getSecretForProvider(provider)),
+    chat: (request: ChatRequest) => routeChat(request),
+    stream: (request: ChatRequest, onToken: (token: string) => void) => streamChat(request, onToken),
+    runAgents: (objective: string, context: string | undefined, model: string) =>
+      runAgentPipeline(objective, context, model, executor),
+    routeModel,
+    createArenaPlan,
+    validateProjectSpec: (spec: ProjectSpec) => validateProjectSpec(spec),
+    createBuildPlan: (request: BuildRequest) => createBuildPlan(request),
+    createQAChecks,
+    planMultiplayer,
+    createAssetPipeline,
+    createScenePlan,
+    createAnimationPlan,
+    listExportTargets,
+    addMemory,
+    listMemories,
+    deleteMemory
   };
 }
 
