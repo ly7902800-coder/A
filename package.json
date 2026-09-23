@@ -8,8 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build -w @genesis-ai/ai-gateway && npm run build -w @genesis-ai/api",
+    "typecheck": "npm run typecheck -w @genesis-ai/ai-gateway && npm run typecheck -w @genesis-ai/api",
     "test": "npm run test --workspaces --if-present"
   },
   "engines": {
