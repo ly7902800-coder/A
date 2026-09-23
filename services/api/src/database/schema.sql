@@ -280,3 +280,15 @@ CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(token_hash,expires_at) WHERE revoked_at IS NULL;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
+
+CREATE TABLE IF NOT EXISTS secret_vault (
+  ref text PRIMARY KEY,
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  ciphertext text NOT NULL,
+  iv text NOT NULL,
+  auth_tag text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz,
+  revoked_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS idx_secret_vault_user ON secret_vault(user_id);
