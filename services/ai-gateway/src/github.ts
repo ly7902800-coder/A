@@ -30,21 +30,21 @@ export class GitHubRestAdapter implements GitHubAdapter {
 
   async getFile(owner: string, repo: string, path: string, ref?: string): Promise<GitHubFile> {
     const suffix = ref ? `?ref=${encodeURIComponent(ref)}` : "";
-    const data = await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.replace(/^\\//, "")}${suffix}`);
+    const data = await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.replace(/^\//, "")}${suffix}`);
     if (Array.isArray(data)) throw new Error("Path is a directory");
     return {
       path: data.path,
       sha: data.sha,
       type: data.type,
       content: typeof data.content === "string"
-        ? Buffer.from(data.content.replace(/\\n/g, ""), "base64").toString("utf8")
+        ? Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf8")
         : undefined
     };
   }
 
   async listContents(owner: string, repo: string, path = "", ref?: string): Promise<GitHubFile[]> {
     const suffix = ref ? `?ref=${encodeURIComponent(ref)}` : "";
-    const data = await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.replace(/^\\//, "")}${suffix}`);
+    const data = await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.replace(/^\//, "")}${suffix}`);
     const items = Array.isArray(data) ? data : [data];
     return items.map((item: any) => ({
       path: item.path,
@@ -55,7 +55,7 @@ export class GitHubRestAdapter implements GitHubAdapter {
 
   async putFile(owner: string, repo: string, path: string, content: string, message: string, branch?: string, sha?: string) {
     if (!this.token) throw new Error("GitHub token is not configured");
-    return this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.replace(/^\\//, "")}`, {
+    return this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.replace(/^\//, "")}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
