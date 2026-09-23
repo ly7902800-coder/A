@@ -15,5 +15,13 @@
     "@openai/agents": "^0.18.0",
     "zod": "^4.0.0",
     "@modelcontextprotocol/client": "^2.0.0"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./google-tools": "./dist/google-tools.js",
+    "./feature-registry": "./dist/feature-registry.js",
+    "./additional-features": "./dist/additional-features.js",
+    "./platform-permissions": "./dist/platform-permissions.js",
+    "./token-vault": "./dist/token-vault.js"
   }
 }
