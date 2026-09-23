@@ -1,5 +1,6 @@
 import { getSecretForProvider } from "./providers.js";
 import type { ChatRequest, ChatResponse, ProviderName } from "./types.js";
+import { chatExtended } from "./extended-providers.js";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const TOGETHER_URL = "https://api.together.xyz/v1/chat/completions";
@@ -60,6 +61,11 @@ async function callOpenAICompatible(
 }
 
 export async function chat(request: ChatRequest): Promise<ChatResponse> {
+  const prefix = request.model.split("/")[0];
+  if (["openai", "anthropic", "gemini", "xai"].includes(prefix)) {
+    return chatExtended(request);
+  }
+
   const provider = providerFromModel(request.model);
 
   if (provider === "openrouter") {
