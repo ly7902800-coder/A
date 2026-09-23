@@ -69,24 +69,13 @@ const defs: IntegrationDefinition[] = [
 ];
 
 export function listIntegrations() { return defs; }
-
-export function getIntegration(id: string) {
-  return defs.find((x) => x.id === id);
-}
+export function getIntegration(id: string) { return defs.find((x) => x.id === id); }
 
 export function getIntegrationStatus(id: string) {
   const d = getIntegration(id);
   if (!d) return {id, status:"unknown" as const};
   if (d.status === "catalog_only" || d.auth === "none") return {id, status:d.status, auth:d.auth};
   const missing = (d.env ?? []).filter((key) => !process.env[key]);
-  return {
-    id,
-    status: missing.length === 0 ? "configured" as const : "credential_required" as const,
-    auth: d.auth,
-    missingEnv: missing
-  };
+  return { id, status: missing.length === 0 ? "configured" as const : "credential_required" as const, auth: d.auth, missingEnv: missing };
 }
-
-export function listIntegrationStatuses() {
-  return defs.map((d) => getIntegrationStatus(d.id));
-}
+export function listIntegrationStatuses() { return defs.map((d) => getIntegrationStatus(d.id)); }
