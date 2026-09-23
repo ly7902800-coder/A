@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - "apps/mobile/**"
-      - ".github/workflows/genesis-android.yml"
+      - ".github/workflows/genesis-apk.yml"
 jobs:
   build:
     runs-on: ubuntu-latest
