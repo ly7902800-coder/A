@@ -41,7 +41,7 @@ import { executeCodingTask } from "./coding-agent.js";
 import { registerMcpServer, listMcpServers, listMcpTools, callMcpTool, disconnectMcpServer } from "./mcp-hub.js";
 import { runMultiAgentTeam } from "./multi-agent-runtime.js";
 import { runOpenAIAgent } from "./openai-agents-sdk.js";
-import { createBuildPlan, dispatchBuild, getFlutterBuildStatus, uiScreenSpec, seoGeoAudit } from "./platform-factory.js";
+import { createBuildPlan, dispatchBuild, getFlutterBuildStatus,getFlutterBuildArtifacts,runFlutterAgent, getFlutterBuildArtifacts, runFlutterAgent, uiScreenSpec, seoGeoAudit } from "./platform-factory.js";
 import { runSelfDevelopment, type SelfDevelopmentInput } from "./self-development-engine.js";
 import { writeFlutterFile, readFlutterFile, ensureFlutterBranch } from "./flutter-workspace.js";
 
