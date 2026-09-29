@@ -344,6 +344,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             const Spacer(),
             _tool(Icons.play_arrow, 'Run', startWorkspace),
             _tool(Icons.bug_report_outlined, 'Debug', _startDebug),
+            _tool(Icons.stop_circle_outlined, 'Stop', () => _debugAction('/v1/flutter/debug/stop', 'Stop Debug')),
             _tool(Icons.refresh, 'Hot Reload', () => _debugAction('/v1/flutter/debug/hot-reload', 'Hot Reload')),
             _tool(Icons.restart_alt, 'Hot Restart', () => _debugAction('/v1/flutter/debug/hot-restart', 'Hot Restart')),
             _tool(Icons.build_outlined, 'Build', buildProject),
@@ -408,7 +409,25 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         _mobileNavigation(),
       ]);
 
-  Widget _flutterTools() => Container(color: const Color(0xFF111216), padding: const EdgeInsets.all(12), child: ListView(children: [const Text('FLUTTER TOOLS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Wrap(spacing: 8, runSpacing: 8, children: [_toolButton('Create Web', Icons.language, 'flutter create --platforms=web .'), _toolButton('Pub Get', Icons.download, 'flutter pub get'), _toolButton('Analyze', Icons.rule, 'flutter analyze'), _toolButton('Test', Icons.science, 'flutter test'), _toolButton('Format', Icons.format_align_left, 'dart format .'), _toolButton('Clean', Icons.cleaning_services, 'flutter clean'), _toolButton('Doctor', Icons.health_and_safety, 'flutter doctor -v'), _toolButton('Build APK', Icons.android, 'flutter build apk --release'), _toolButton('Build AAB', Icons.inventory_2, 'flutter build appbundle --release'), _toolButton('Build Web', Icons.web, 'flutter build web --release'), _toolButton('Run Chrome', Icons.play_arrow, 'flutter run -d chrome'), _toolButton('Packages', Icons.extension, 'flutter pub deps')]), const SizedBox(height: 18), const Text('PROJECT TARGET', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Row(children: [Expanded(child: _targetButton('APK', 'apk', Icons.android)), const SizedBox(width: 8), Expanded(child: _targetButton('AAB', 'aab', Icons.inventory_2)), const SizedBox(width: 8), Expanded(child: _targetButton('WEB', 'web', Icons.web))]), const SizedBox(height: 14), Text('Target: ' + target.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF9EA3AE))) ]));
+  Widget _flutterTools() => Container(color: const Color(0xFF111216), padding: const EdgeInsets.all(12), child: ListView(children: [const Text('FLUTTER TOOLS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Wrap(spacing: 8, runSpacing: 8, children: [
+  _toolButton('Create Web', Icons.language, 'flutter create --platforms=web .'),
+  _toolButton('Pub Get', Icons.download, 'flutter pub get'),
+  _toolButton('Analyze', Icons.rule, 'flutter analyze'),
+  _toolButton('Test', Icons.science, 'flutter test'),
+  _toolButton('Format', Icons.format_align_left, 'dart format .'),
+  _toolButton('Fix', Icons.auto_fix_high, 'dart fix --dry-run'),
+  _toolButton('Clean', Icons.cleaning_services, 'flutter clean'),
+  _toolButton('Doctor', Icons.health_and_safety, 'flutter doctor -v'),
+  _toolButton('Packages', Icons.extension, 'flutter pub deps'),
+  _toolButton('Outdated', Icons.update, 'flutter pub outdated'),
+  _toolButton('Build APK', Icons.android, 'flutter build apk --release'),
+  _toolButton('Build AAB', Icons.inventory_2, 'flutter build appbundle --release'),
+  _toolButton('Build Web', Icons.web, 'flutter build web --release'),
+  _toolButton('Run Chrome', Icons.play_arrow, 'flutter run -d chrome --web-run-headless'),
+  _toolButton('Dart Analyze', Icons.code, 'dart analyze'),
+  _toolButton('Git Status', Icons.account_tree, 'git status --short'),
+  _toolButton('Git Diff', Icons.compare_arrows, 'git diff --stat')
+]), const SizedBox(height: 18), const Text('PROJECT TARGET', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Row(children: [Expanded(child: _targetButton('APK', 'apk', Icons.android)), const SizedBox(width: 8), Expanded(child: _targetButton('AAB', 'aab', Icons.inventory_2)), const SizedBox(width: 8), Expanded(child: _targetButton('WEB', 'web', Icons.web))]), const SizedBox(height: 14), Text('Target: ' + target.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF9EA3AE))) ]));
 
   Widget _toolButton(String label, IconData icon, String command) => OutlinedButton.icon(onPressed: busy ? null : () { terminal.text = command; runCommand(); }, icon: Icon(icon, size: 16), label: Text(label, style: const TextStyle(fontSize: 11)));
 
