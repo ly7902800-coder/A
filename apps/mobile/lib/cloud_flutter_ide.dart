@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,8 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   bool busy=false;
   String status='Cloud Flutter جاهز';
   String target='apk';
+  String sessionId='genesis-'+DateTime.now().millisecondsSinceEpoch.toString();
+  final terminal=TextEditingController();
   Timer? pollTimer;
 
   String? get apiBase {
@@ -40,6 +43,25 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
       options:Options(method:method,headers:{'Content-Type':'application/json',if(token!=null&&token.isNotEmpty)'Authorization':'Bearer '+token}),
     );
     return response.data??<String,dynamic>{};
+  }
+
+  Future<void> runTerminal() async {
+    final command=terminal.text.trim();
+    if(command.isEmpty)return;
+    setState(()=>status='Terminal: '+command);
+    try {
+      final r=await request('POST','/v1/flutter/worker/command',data:{
+        'sessionId':sessionId,'repo':repo.text.trim(),'branch':branch.text.trim(),'command':command,
+      });
+      setState(()=>status=(r['stdout']?.toString()??'')+(r['stderr']?.toString()??''));
+    } catch(e){setState(()=>status='Terminal error: '+e.toString());}
+  }
+
+  Future<void> startWorkspace() async {
+    try {
+      await request('POST','/v1/flutter/worker/start',data:{'sessionId':sessionId,'repo':repo.text.trim(),'branch':branch.text.trim()});
+      setState(()=>status='Cloud Flutter workspace started');
+    } catch(e){setState(()=>status='Workspace error: '+e.toString());}
   }
 
   Future<void> loadFile() async {
@@ -107,7 +129,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     finally{if(mounted)setState(()=>busy=false);}
   }
 
-  @override void dispose(){pollTimer?.cancel();repo.dispose();baseBranch.dispose();branch.dispose();path.dispose();code.dispose();super.dispose();}
+  @override void dispose(){pollTimer?.cancel();repo.dispose();baseBranch.dispose();branch.dispose();path.dispose();code.dispose();terminal.dispose();super.dispose();}
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(
       title:const Text('Genesis Cloud Flutter IDE'),
@@ -134,6 +156,14 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         ],onChanged:(v){if(v!=null)setState(()=>target=v);}),
         const SizedBox(width:8),
         FilledButton.icon(onPressed:busy?null:build,icon:const Icon(Icons.build),label:const Text('Build')),
+      ]),
+      Row(children:[
+        const SizedBox(width:8),
+        FilledButton.icon(onPressed:busy?null:startWorkspace,icon:const Icon(Icons.cloud),label:const Text('Start Workspace')),
+        const SizedBox(width:8),
+        Expanded(child:TextField(controller:terminal,decoration:const InputDecoration(labelText:'Safe Flutter command',hintText:'flutter analyze'))),
+        const SizedBox(width:8),
+        IconButton(onPressed:runTerminal,icon:const Icon(Icons.terminal)),
       ]),
       Expanded(child:Padding(
         padding:const EdgeInsets.all(8),
