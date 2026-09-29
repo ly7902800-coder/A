@@ -40,6 +40,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Flutter: Code Generation",
+      "type": "shell",
+      "command": "cd apps/mobile && dart run build_runner build --delete-conflicting-outputs",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Watch Code Generation",
+      "type": "shell",
+      "command": "cd apps/mobile && dart run build_runner watch --delete-conflicting-outputs",
+      "problemMatcher": []
+    },
+    {
       "label": "Flutter: Build APK",
       "type": "shell",
       "command": "./tool/cloud_ide.sh apk",
