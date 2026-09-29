@@ -31,6 +31,12 @@ jobs:
       - name: Flutter dependencies
         if: inputs.target == 'apk' || inputs.target == 'aab'
         run: cd apps/mobile && flutter pub get
+      - name: Flutter analyze
+        if: inputs.target == 'apk' || inputs.target == 'aab'
+        run: cd apps/mobile && flutter analyze
+      - name: Flutter tests
+        if: inputs.target == 'apk' || inputs.target == 'aab'
+        run: cd apps/mobile && flutter test
       - name: Build APK
         if: inputs.target == 'apk'
         run: cd apps/mobile && flutter build apk --release
