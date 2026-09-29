@@ -463,6 +463,7 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
               ],
             ),
           ),
+        );
   @override
   void dispose() {
     input.dispose();
