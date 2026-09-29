@@ -6,6 +6,9 @@ on:
         required: true
         type: choice
         options: [web, apk, aab]
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,9 +58,29 @@ jobs:
         with:
           name: genesis-apk
           path: 'apps/mobile/build/app/outputs/flutter-apk/*.apk'
+
+      - name: Publish APK release asset
+        if: inputs.target == 'apk'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "genesis-build-${{ github.run_number }}" \
+            apps/mobile/build/app/outputs/flutter-apk/app-release.apk \
+            --title "Genesis AI Android ${{ github.run_number }}" \
+            --notes "Built by Genesis Build Factory from ${{ github.sha }}."
       - name: Upload AAB
         if: inputs.target == 'aab'
         uses: actions/upload-artifact@v4
         with:
           name: genesis-aab
           path: 'apps/mobile/build/app/outputs/bundle/release/*.aab'
+
+      - name: Publish AAB release asset
+        if: inputs.target == 'aab'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "genesis-aab-${{ github.run_number }}" \
+            apps/mobile/build/app/outputs/bundle/release/app-release.aab \
+            --title "Genesis AI AAB ${{ github.run_number }}" \
+            --notes "Built by Genesis Build Factory from ${{ github.sha }}."
