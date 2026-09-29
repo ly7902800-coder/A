@@ -21,6 +21,13 @@ export async function signup(email:string,password:string,displayName?:string){
  const r=await db.query("INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) RETURNING id,email,display_name",[normalized,displayName??null,hashPassword(password)]);
  return createSession(r.rows[0]);
 }
+export async function guest(){
+ const db=getDatabase();if(!db)throw new Error("Database is not configured");
+ const id=crypto.randomUUID();
+ const email="guest+"+id+"@guest.genesis.local";
+ const r=await db.query("INSERT INTO users(id,email,display_name) VALUES($1,$2,$3) RETURNING id,email,display_name",[id,email,"Guest"]);
+ return createSession(r.rows[0]);
+}
 export async function login(email:string,password:string){
  const db=getDatabase();if(!db)throw new Error("Database is not configured");
  const r=await db.query("SELECT id,email,display_name,password_hash FROM users WHERE email=$1",[email.trim().toLowerCase()]);
