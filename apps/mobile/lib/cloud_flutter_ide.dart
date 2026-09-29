@@ -423,7 +423,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             language: MonacoLanguage.dart,
             theme: MonacoTheme.vsDark,
             fontSize: 13,
-            minimap: false,
+            minimap: MonacoMinimapOptions(enabled: false),
             wordWrap: MonacoWordWrap.off,
           ),
           showStatusBar: true,
