@@ -17,7 +17,7 @@ function safeId(value) {
 function workspaceDir(sessionId) {
   return path.join(ROOT, safeId(sessionId));
 }
-function auth(req) {
+function previewAuth(url) {\n  const secret = process.env.WORKER_SHARED_SECRET;\n  const sessionId = safeId(url.searchParams.get("sessionId"));\n  const supplied = url.searchParams.get("access") || "";\n  const expected = crypto.createHmac("sha256", secret || "").update(sessionId).digest("hex");\n  if (!secret || !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) { const e = new Error("Preview authentication failed"); e.statusCode = 401; throw e; }\n  return sessionId;\n}\nfunction auth(req) {
   const expected = process.env.WORKER_SHARED_SECRET;
   if (!expected) throw new Error("WORKER_SHARED_SECRET is not configured");
   const supplied = req.headers["x-worker-token"];
