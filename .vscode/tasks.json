@@ -4,31 +4,51 @@
     {
       "label": "Flutter: Get Dependencies",
       "type": "shell",
-      "command": "cd apps/mobile && flutter pub get",
+      "command": "./tool/cloud_ide.sh get",
       "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Preview Web",
+      "type": "shell",
+      "command": "./tool/cloud_ide.sh preview",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {"reveal": "always", "panel": "dedicated"}
     },
     {
       "label": "Flutter: Analyze",
       "type": "shell",
-      "command": "cd apps/mobile && flutter analyze",
+      "command": "./tool/cloud_ide.sh analyze",
       "problemMatcher": []
     },
     {
       "label": "Flutter: Test",
       "type": "shell",
-      "command": "cd apps/mobile && flutter test",
+      "command": "./tool/cloud_ide.sh test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Clean",
+      "type": "shell",
+      "command": "./tool/cloud_ide.sh clean",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Doctor",
+      "type": "shell",
+      "command": "./tool/cloud_ide.sh doctor",
       "problemMatcher": []
     },
     {
       "label": "Flutter: Build APK",
       "type": "shell",
-      "command": "cd apps/mobile && flutter build apk --release",
+      "command": "./tool/cloud_ide.sh apk",
       "problemMatcher": []
     },
     {
       "label": "Flutter: Build AAB",
       "type": "shell",
-      "command": "cd apps/mobile && flutter build appbundle --release",
+      "command": "./tool/cloud_ide.sh aab",
       "problemMatcher": []
     }
   ]
