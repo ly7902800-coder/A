@@ -293,8 +293,8 @@ wss.on("connection", ws => {
   ws.on("message", async raw => {
     try {
       const m = JSON.parse(String(raw));
-      const s = await ensureSession(m.sessionId, m.repo, m.branch);
       auth({ headers: { "x-worker-token": m.workerToken || "" } });
+      const s = await ensureSession(m.sessionId, m.repo, m.branch);
       if (m.type === "exec") {
         const allowed = new Set(["flutter pub get","flutter analyze","flutter test","dart format .","git status --short"]);
         if (!allowed.has(m.command)) return ws.send(JSON.stringify({ type: "error", message: "command not allowed" }));
