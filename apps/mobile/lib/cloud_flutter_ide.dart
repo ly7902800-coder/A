@@ -472,28 +472,62 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
 
   Widget _editor() => Container(
         color: const Color(0xFF101114),
-        child: MonacoEditor(
-          key: ValueKey(editorVersion),
-          initialText: code.text,
-          options: const EditorOptions(
-            language: MonacoLanguage.dart,
-            theme: MonacoTheme.vsDark,
-            fontSize: 13,
-            minimap: MonacoMinimapOptions(enabled: false),
-            wordWrap: MonacoWordWrap.off,
-          ),
-          showStatusBar: true,
-          page: MonacoPageConfig(
-            allowedConnectSources: lspUrl == null
-                ? const []
-                : <String>[
-                    Uri.parse(lspUrl!).scheme +
-                        '://' +
-                        Uri.parse(lspUrl!).authority,
-                  ],
-          ),
-          onReady: (controller) => unawaited(_attachLsp(controller)),
-          onContentChanged: (value) => code.text = value,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: TextField(
+                controller: code,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  height: 1.45,
+                  color: Color(0xFFE6E6E6),
+                ),
+                decoration: const InputDecoration(
+                  hintText: "// اكتب كود Flutter / Dart هنا...\\n\\nimport 'package:flutter/material.dart';",
+                  hintStyle: TextStyle(fontFamily: 'monospace', fontSize: 13, color: Color(0xFF666A73)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.fromLTRB(54, 14, 14, 24),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0, top: 0, bottom: 0, width: 44,
+              child: IgnorePointer(
+                child: Container(
+                  color: const Color(0xFF15161A),
+                  alignment: Alignment.topRight,
+                  padding: const EdgeInsets.only(right: 8, top: 14),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: code,
+                    builder: (_, value, __) {
+                      final lines = value.text.isEmpty ? 1 : '\\n'.allMatches(value.text).length + 1;
+                      return Text(
+                        List.generate(lines, (i) => (i + 1).toString()).join('\\n'),
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.45, color: Color(0xFF555963)),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10, top: 8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: const Color(0xFF25272D), borderRadius: BorderRadius.circular(6)),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  child: Text('Dart • Flutter', style: TextStyle(fontSize: 10)),
+                ),
+              ),
+            ),
+          ],
         ),
       );
 
