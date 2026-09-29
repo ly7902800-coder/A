@@ -21,6 +21,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   bool busy=false;
   String status='Cloud Flutter جاهز';
   String target='apk';
+  Timer? pollTimer;
 
   String? get apiBase {
     const value=String.fromEnvironment('GENESIS_API_URL',defaultValue:'');
@@ -77,6 +78,21 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     finally{if(mounted)setState(()=>busy=false);}
   }
 
+  Future<void> pollBuild() async {
+    try {
+      final r=await request('GET','/v1/flutter/build/status',query:{'repo':repo.text.trim(),'branch':branch.text.trim()});
+      if(r['found']!=true)return;
+      final s=r['status']?.toString()??'';
+      final conclusion=r['conclusion']?.toString();
+      if(s=='completed') {
+        pollTimer?.cancel();
+        setState(()=>status='Build '+(conclusion??'completed')+' | '+(r['htmlUrl']?.toString()??''));
+      } else {
+        setState(()=>status='Build running: '+s);
+      }
+    } catch(e) {}
+  }
+
   Future<void> build() async {
     setState(()=>busy=true);
     try {
@@ -85,11 +101,13 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         'repo':repo.text.trim(),'branch':branch.text.trim(),'target':target,
       });
       setState(()=>status='تم إرسال '+target.toUpperCase()+' إلى Flutter Build Factory. البناء يعمل على GitHub Actions.');
+      pollTimer?.cancel();
+      pollTimer=Timer.periodic(const Duration(seconds:8),(_)=>pollBuild());
     }catch(e){setState(()=>status='Build error: '+e.toString());}
     finally{if(mounted)setState(()=>busy=false);}
   }
 
-  @override void dispose(){repo.dispose();baseBranch.dispose();branch.dispose();path.dispose();code.dispose();super.dispose();}
+  @override void dispose(){pollTimer?.cancel();repo.dispose();baseBranch.dispose();branch.dispose();path.dispose();code.dispose();super.dispose();}
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(
       title:const Text('Genesis Cloud Flutter IDE'),
