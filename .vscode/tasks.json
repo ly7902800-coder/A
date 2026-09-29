@@ -13,7 +13,38 @@
       "command": "./tool/cloud_ide.sh preview",
       "isBackground": true,
       "problemMatcher": [],
-      "presentation": {"reveal": "always", "panel": "dedicated"}
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Flutter: Run Web",
+      "type": "shell",
+      "command": "./tool/cloud_ide.sh run",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Flutter: DevTools",
+      "type": "shell",
+      "command": "./tool/cloud_ide.sh devtools",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Flutter: Pub Add",
+      "type": "shell",
+      "command": "PACKAGE=${input:package} ./tool/cloud_ide.sh pub-add",
+      "problemMatcher": []
     },
     {
       "label": "Flutter: Analyze",
@@ -62,6 +93,13 @@
       "type": "shell",
       "command": "./tool/cloud_ide.sh aab",
       "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "package",
+      "type": "promptString",
+      "description": "pub.dev package name"
     }
   ]
 }
