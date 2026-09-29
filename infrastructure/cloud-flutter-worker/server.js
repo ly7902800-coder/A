@@ -129,7 +129,7 @@ async function startDebug(s) {
   ], { cwd, env: { ...process.env, TERM: "xterm-256color" }});
   s.debug = child;
   log(s, "system", "Starting Flutter debug server on " + port);
-  const capture = data => { const text = data.toString(); log(s, "stdout", text); const vm = text.match(/http:\/\/127\.0\.0\.1:\\d+\/[^\s]+/); if (vm && text.includes("VM Service")) s.vmServiceUrl = vm[0]; const dt = text.match(/http:\/\/127\.0\.0\.1:\\d+\?uri=[^\s]+/); if (dt) s.devtoolsUrl = dt[0]; };
+  const capture = data => { const text = data.toString(); log(s, "stdout", text); const vm = text.match(/http:\/\/127\.0\.0\.1:\d+\/[^\s]+/); if (vm && text.includes("VM Service")) s.vmServiceUrl = vm[0]; const dt = text.match(/http:\/\/127\.0\.0\.1:\d+\?uri=[^\s]+/); if (dt) s.devtoolsUrl = dt[0]; };
   child.stdout.on("data", capture);
   child.stderr.on("data", capture);
   child.on("close", code => {
@@ -138,7 +138,9 @@ async function startDebug(s) {
     s.previewPort = null;
     s.browserDebugPort = null;
   });
-  await new Promise(r => setTimeout(r, 3000));
+  for (let i = 0; i < 12 && s.debug && !s.devtoolsUrl; i++) {
+    await new Promise(r => setTimeout(r, 1000));
+  }
   return s;
 }
 async function stopDebug(s) {
@@ -211,15 +213,14 @@ const server = http.createServer(async (req, res) => {
       sessions: sessions.size,
       uptime: process.uptime()
     });
-    auth(req);
-
     if (url.pathname.startsWith("/preview/") || url.pathname === "/preview") {
-      const id = safeId(url.searchParams.get("sessionId"));
+      const id = previewAuth(url);
       const s = sessions.get(id);
       if (!s) return send(res, 404, { error: "session not found" });
       s.lastHeartbeat = Date.now();
       return previewProxy(req, res, s, url.pathname.replace(/^\/preview/, "") + url.search);
     }
+    auth(req);
 
     if (req.method !== "POST") return send(res, 404, { error: "not found" });
     const b = await body(req);
