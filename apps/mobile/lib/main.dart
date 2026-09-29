@@ -7,11 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'flutter_feature_lab.dart';
-import 'flutter_buttons_lab.dart';
-import 'flutter_inputs_lab.dart';
-import 'flutter_layout_lab.dart';
-import 'flutter_completion_lab.dart';
 import 'cloud_flutter_ide.dart';
 import 'package:http/http.dart' as http;
 
@@ -59,26 +54,6 @@ final router = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const GenesisHome(),
-    ),
-    GoRoute(
-      path: '/flutter-lab',
-      builder: (context, state) => const FlutterFeatureLab(),
-    ),
-    GoRoute(
-      path: '/buttons-lab',
-      builder: (context, state) => const ButtonsPage(),
-    ),
-    GoRoute(
-      path: '/inputs-lab',
-      builder: (context, state) => const InputsPage(),
-    ),
-    GoRoute(
-      path: '/layout-lab',
-      builder: (context, state) => const LayoutPage(),
-    ),
-    GoRoute(
-      path: '/flutter-completion',
-      builder: (context, state) => const FlutterCompletionLab(),
     ),
     GoRoute(
       path: '/cloud-flutter',
@@ -379,36 +354,6 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   currentAccountPicture: CircleAvatar(
                     child: Icon(Icons.auto_awesome),
                   ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.widgets),
-                  title: const Text('Flutter Feature Lab'),
-                  subtitle: const Text('Widgets, layout, animation and device APIs'),
-                  onTap: () => context.go('/flutter-lab'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.smart_button),
-                  title: const Text('Buttons Lab'),
-                  subtitle: const Text('أزرار وتفاعلات Flutter'),
-                  onTap: () => context.go('/buttons-lab'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.text_fields),
-                  title: const Text('Inputs & Forms Lab'),
-                  subtitle: const Text('النصوص والمدخلات والفورم'),
-                  onTap: () => context.go('/inputs-lab'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.dashboard_customize),
-                  title: const Text('Layout Lab'),
-                  subtitle: const Text('التخطيط والتجاوب'),
-                  onTap: () => context.go('/layout-lab'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.rocket_launch),
-                  title: const Text('Flutter Production Lab'),
-                  subtitle: const Text('Scrolling, navigation, state, networking, media, testing, production'),
-                  onTap: () => context.go('/flutter-completion'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.code),
