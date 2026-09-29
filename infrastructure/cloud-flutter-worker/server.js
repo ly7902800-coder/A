@@ -98,7 +98,7 @@ async function ensureSession(sessionId, repo, branch) {
     await fs.rm(dir, { recursive: true, force: true });
     await cloneRepo(repo, branch, dir);
   }
-  s = { id, repo, branch, dir, debug: null, previewPort: null, logs: [], createdAt: Date.now(), lastHeartbeat: Date.now() };
+  s = { id, repo, branch, dir, debug: null, previewPort: null, browserDebugPort: null, vmServiceUrl: null, devtoolsUrl: null, logs: [], createdAt: Date.now(), lastHeartbeat: Date.now() };
   sessions.set(id, s);
   return s;
 }
@@ -117,20 +117,26 @@ async function startDebug(s) {
   const port = nextPort();
   s.previewPort = port;
   const cwd = projectRoot(s.dir);
+  const browserDebugPort = port + 1;
+  s.browserDebugPort = browserDebugPort;
   const child = spawn("flutter", [
-    "run", "-d", "web-server",
+    "run", "-d", "chrome",
     "--web-hostname", "127.0.0.1",
     "--web-port", String(port),
-    "--no-web-browser-launch"
+    "--web-run-headless",
+    "--web-browser-debug-port", String(browserDebugPort),
+    "--web-browser-flag=--no-sandbox"
   ], { cwd, env: { ...process.env, TERM: "xterm-256color" }});
   s.debug = child;
   log(s, "system", "Starting Flutter debug server on " + port);
-  child.stdout.on("data", d => log(s, "stdout", d.toString()));
-  child.stderr.on("data", d => log(s, "stderr", d.toString()));
+  const capture = data => { const text = data.toString(); log(s, "stdout", text); const vm = text.match(/http:\/\/127\.0\.0\.1:\\d+\/[^\\s]+/); if (vm && text.includes("VM Service")) s.vmServiceUrl = vm[0]; const dt = text.match(/http:\/\/127\.0\.0\.1:\\d+\?uri=[^\\s]+/); if (dt) s.devtoolsUrl = dt[0]; };
+  child.stdout.on("data", capture);
+  child.stderr.on("data", capture);
   child.on("close", code => {
     log(s, "system", "Flutter debug process exited with code " + code);
     s.debug = null;
     s.previewPort = null;
+    s.browserDebugPort = null;
   });
   await new Promise(r => setTimeout(r, 3000));
   return s;
@@ -266,6 +272,9 @@ const server = http.createServer(async (req, res) => {
         running: Boolean(s.debug && !s.debug.killed),
         sessionId: s.id,
         previewPort: s.previewPort,
+        browserDebugPort: s.browserDebugPort,
+        vmServiceUrl: s.vmServiceUrl,
+        devtoolsUrl: s.devtoolsUrl,
         previewPath: s.previewPort ? "/preview?sessionId=" + encodeURIComponent(s.id) : null,
         logs: s.logs.slice(-100)
       });
@@ -280,7 +289,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
     if (url.pathname === "/v1/devtools") {
-      return send(res, 200, { supported: false, reason: "DevTools requires a Dart VM service endpoint from a debug target." });
+      return send(res, 200, { supported: Boolean(s.devtoolsUrl), url: s.devtoolsUrl, vmServiceUrl: s.vmServiceUrl });
     }
     return send(res, 404, { error: "unknown route" });
   } catch (e) {
