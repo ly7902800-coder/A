@@ -34,7 +34,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path("apps/mobile/android/app/build.gradle.kts")
+          p=Path("android/app/build.gradle.kts")
           s=p.read_text()
           if "isCoreLibraryDesugaringEnabled" not in s:
               s=s.replace("android {", "android {\n    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }", 1)
