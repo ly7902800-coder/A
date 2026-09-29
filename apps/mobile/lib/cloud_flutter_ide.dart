@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 
@@ -568,7 +569,12 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             IconButton(
               tooltip: 'فتح Artifact',
               icon: const Icon(Icons.open_in_new, size: 18),
-              onPressed: () => setState(() => status = 'APK Artifact جاهز داخل GitHub Actions'),
+              onPressed: () async {
+                final url = artifacts.first['downloadUrl']?.toString();
+                if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                  await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                }
+              },
             ),
         ]),
       );
