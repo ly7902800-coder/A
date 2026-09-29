@@ -86,9 +86,12 @@ class GenesisApp extends ConsumerWidget {
         title: 'Genesis AI',
         routerConfig: router,
         theme: ThemeData(
-          brightness: Brightness.dark,
+          brightness: Brightness.light,
           useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         ),
+        darkTheme: ThemeData.dark(useMaterial3: true),
+        themeMode: ThemeMode.system,
       ),
     );
   }
@@ -109,6 +112,7 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
 
   String token = '';
   String conversationId = '';
+  int _tabIndex = 0;
   List<dynamic> models = [];
 
   Dio get _dio => Dio(
@@ -240,8 +244,10 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppCubit, AppStatusState>(
-      builder: (context, status) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: BlocBuilder<AppCubit, AppStatusState>(
+        builder: (context, status) {
         final loading = status is AppLoading;
         final selectedModel = ref.watch(selectedModelProvider);
 
@@ -288,8 +294,13 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
           ),
           drawer: Drawer(
             child: ListView(
+              padding: EdgeInsets.zero,
               children: [
-                const DrawerHeader(
+                const UserAccountsDrawerHeader(
+                  accountName: Text('Genesis AI'),
+                  accountEmail: Text('Cloud AI Assistant'),
+                  currentAccountPicture: CircleAvatar(child: Icon(Icons.auto_awesome)),
+                ),
                   child: Text(
                     'Genesis AI',
                     style: TextStyle(fontSize: 28),
@@ -324,7 +335,8 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
               ],
             ),
           ),
-          body: Column(
+          body: SafeArea(
+            child: Column(
             children: [
               if (token.isEmpty)
                 Padding(
@@ -390,7 +402,8 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
             ],
           ),
         );
-      },
+        },
+      ),
     );
   }
 
