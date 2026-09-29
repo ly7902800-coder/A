@@ -34,6 +34,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
 
   WebSocketChannel? terminalSocket;
   String panel = 'editor';
+  String projectName = 'Genesis Flutter Project';
   String target = 'apk';
   List<Map<String, dynamic>> artifacts = [];
   String? buildRunId;
@@ -400,10 +401,18 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
                   ? _devtools()
                   : panel == 'terminal'
                       ? _terminalPanel()
-                      : _editor(),
+                      : panel == 'tools'
+                          ? _flutterTools()
+                          : _editor(),
         ),
         _mobileNavigation(),
       ]);
+
+  Widget _flutterTools() => Container(color: const Color(0xFF111216), padding: const EdgeInsets.all(12), child: ListView(children: [const Text('FLUTTER TOOLS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Wrap(spacing: 8, runSpacing: 8, children: [_toolButton('Create Web', Icons.language, 'flutter create --platforms=web .'), _toolButton('Pub Get', Icons.download, 'flutter pub get'), _toolButton('Analyze', Icons.rule, 'flutter analyze'), _toolButton('Test', Icons.science, 'flutter test'), _toolButton('Format', Icons.format_align_left, 'dart format .'), _toolButton('Clean', Icons.cleaning_services, 'flutter clean'), _toolButton('Doctor', Icons.health_and_safety, 'flutter doctor -v'), _toolButton('Build APK', Icons.android, 'flutter build apk --release'), _toolButton('Build AAB', Icons.inventory_2, 'flutter build appbundle --release'), _toolButton('Build Web', Icons.web, 'flutter build web --release'), _toolButton('Run Chrome', Icons.play_arrow, 'flutter run -d chrome'), _toolButton('Packages', Icons.extension, 'flutter pub deps')]), const SizedBox(height: 18), const Text('PROJECT TARGET', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Row(children: [Expanded(child: _targetButton('APK', 'apk', Icons.android)), const SizedBox(width: 8), Expanded(child: _targetButton('AAB', 'aab', Icons.inventory_2)), const SizedBox(width: 8), Expanded(child: _targetButton('WEB', 'web', Icons.web))]), const SizedBox(height: 14), Text('Target: ' + target.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF9EA3AE))) ]));
+
+  Widget _toolButton(String label, IconData icon, String command) => OutlinedButton.icon(onPressed: busy ? null : () { terminal.text = command; runCommand(); }, icon: Icon(icon, size: 16), label: Text(label, style: const TextStyle(fontSize: 11)));
+
+  Widget _targetButton(String label, String value, IconData icon) => ElevatedButton.icon(onPressed: busy ? null : () => setState(() => target = value), icon: Icon(icon, size: 15), label: Text(label, style: const TextStyle(fontSize: 10)));
 
   Widget _explorer() => Container(
         color: const Color(0xFF17181C),
@@ -680,6 +689,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
               _nav(Icons.code, 'Code', 'editor'),
               _nav(Icons.phone_android, 'Preview', 'preview'),
               _nav(Icons.terminal, 'Terminal', 'terminal'),
+              _nav(Icons.build_circle, 'Flutter', 'tools'),
               _nav(Icons.account_tree, 'Inspector', 'devtools'),
               IconButton(
                   tooltip: 'Computer mode',
