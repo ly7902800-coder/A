@@ -24,6 +24,18 @@ jobs:
           cache: true
       - name: Generate Android and Web platforms
         run: flutter create --platforms=android,web --project-name genesis_ai --org com.genesisai .
+      - name: Configure Android desugaring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("android/app/build.gradle.kts")
+          s=p.read_text()
+          if "isCoreLibraryDesugaringEnabled" not in s:
+              s=s.replace("android {", "android {\n    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }", 1)
+          if "coreLibraryDesugaring(" not in s:
+              s=s.replace("dependencies {", "dependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.5\")", 1)
+          p.write_text(s)
+          PY
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
