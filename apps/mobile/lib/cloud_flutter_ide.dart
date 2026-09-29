@@ -27,6 +27,8 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   List<Map<String, dynamic>> treeEntries = [];
   WebViewController? previewController;
   String? previewUrl;
+  String? devtoolsUrl;
+  WebViewController? devtoolsController;
   String panel = 'editor';
   String target = 'apk';
   String status = 'Cloud Flutter workspace ready';
@@ -81,6 +83,13 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     });
     final preview = await request('POST', '/v1/flutter/preview-url', data: {'sessionId': sessionId});
     previewUrl = preview['url']?.toString();
+    final debug = await request('POST', '/v1/flutter/debug/status', data: {'sessionId': sessionId});
+    devtoolsUrl = debug['devtoolsUrl']?.toString();
+    if (devtoolsUrl != null) {
+      devtoolsController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..loadRequest(Uri.parse(devtoolsUrl!));
+    }
     if (previewUrl != null) {
       previewController = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -322,9 +331,11 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         Expanded(
           child: panel == 'preview'
               ? _preview()
-              : panel == 'terminal'
-                  ? _terminalPanel()
-                  : _editor(),
+              : panel == 'devtools'
+                  ? _devtools()
+                  : panel == 'terminal'
+                      ? _terminalPanel()
+                      : _editor(),
         ),
         _mobileNavigation(),
       ]);
@@ -463,8 +474,15 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             _panelTab('DEVTOOLS', 'devtools'),
             const Spacer(),
           ]),
-          Expanded(child: _terminalPanel()),
+          Expanded(child: panel == 'devtools' ? _devtools() : _terminalPanel()),
         ]),
+      );
+
+  Widget _devtools() => Container(
+        color: const Color(0xFF0D0E10),
+        child: devtoolsController == null
+            ? const Center(child: Text('Start Debug to connect Flutter DevTools'))
+            : WebViewWidget(controller: devtoolsController!),
       );
 
   Widget _panelTab(String label, String id) => TextButton(
