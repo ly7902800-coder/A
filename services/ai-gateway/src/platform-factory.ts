@@ -3,5 +3,13 @@ async function gh(path:string,init:RequestInit={}){const r=await fetch("https://
 const targetCommands:Record<string,string>={web:"npm run build",apk:"cd apps/mobile && flutter build apk --release",aab:"cd apps/mobile && flutter build appbundle --release"};
 export function createBuildPlan(target:string){if(!targetCommands[target])throw new Error("Unsupported build target: "+target);return {target,command:targetCommands[target],artifact:target==="web"?"dist":target==="apk"?"apps/mobile/build/app/outputs/flutter-apk/app-release.apk":"apps/mobile/build/app/outputs/bundle/release/app-release.aab",approvalRequired:true};}
 export async function dispatchBuild(repo:string,branch:string,target:string){const plan=createBuildPlan(target);await gh("/repos/"+repo+"/actions/workflows/genesis-build.yml/dispatches",{method:"POST",body:JSON.stringify({ref:branch,inputs:{target}})});return {repo,branch,...plan,dispatchedAt:new Date().toISOString()};}
+
+export async function getFlutterBuildStatus(repo:string,branch:string){
+  const runs=await gh("/repos/"+repo+"/actions/workflows/genesis-build.yml/runs?branch="+encodeURIComponent(branch)+"&per_page=5");
+  const run=(runs.workflow_runs??[]).find((r:any)=>r.status!=="completed" || r.conclusion==="success" || r.conclusion==="failure" || r.conclusion==="cancelled");
+  if(!run)return {found:false,repo,branch};
+  return {found:true,runId:run.id,status:run.status,conclusion:run.conclusion,htmlUrl:run.html_url,createdAt:run.created_at,updatedAt:run.updated_at};
+}
+
 export function uiScreenSpec(name:string,components:string[]){return {name,viewport:{width:390,height:844},direction:"rtl",theme:"genesis-dark",components:components.map((c,i)=>({id:"c"+i,type:c}))};}
 export async function seoGeoAudit(url:string){const r=await fetch(url,{redirect:"follow"});const html=await r.text();const title=(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]??"").trim();const description=(html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)/i)?.[1]??"").trim();const canonical=(html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']*)/i)?.[1]??"").trim();const h1=(html.match(/<h1\b/gi)??[]).length;return {url,status:r.status,title,description,canonical,h1,checks:{title:Boolean(title),description:Boolean(description),canonical:Boolean(canonical),singleH1:h1===1},geo:{llmsTxt:"/llms.txt",structuredData:/application\/ld\+json/i.test(html)}};}
