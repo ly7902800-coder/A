@@ -572,6 +572,51 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             ['Content Studio', Icons.video_settings, '__content_studio__'],
             ['Media Assets', Icons.perm_media, 'find . -maxdepth 4 -type f -name "*.mp4" -o -name "*.webm" -o -name "*.mov" -o -name "*.jpg" -o -name "*.png"'],
           ]),
+          _toolGroup('AAA GAME STUDIO', Icons.videogame_asset, [
+            ['World Builder', Icons.public, '__game_world__'],
+            ['Terrain', Icons.terrain, '__game_terrain__'],
+            ['Characters', Icons.person, '__game_characters__'],
+            ['Combat System', Icons.gps_fixed, '__game_combat__'],
+            ['Weapons', Icons.my_location, '__game_weapons__'],
+            ['Vehicles', Icons.directions_car, '__game_vehicles__'],
+            ['Enemy AI', Icons.smart_toy, '__game_ai__'],
+            ['Navigation', Icons.route, '__game_navigation__'],
+            ['Animation', Icons.animation, '__game_animation__'],
+            ['Cinematics', Icons.movie, '__game_cinematics__'],
+            ['VFX', Icons.auto_awesome, '__game_vfx__'],
+            ['3D Audio', Icons.surround_sound, '__game_audio__'],
+            ['Multiplayer', Icons.public, '__game_multiplayer__'],
+            ['Dedicated Server', Icons.dns, '__server_studio__'],
+            ['Matchmaking', Icons.groups, '__server_matchmaking__'],
+            ['Anti-Cheat', Icons.security, '__server_anticheat__'],
+            ['Profiler', Icons.speed, '__game_profiler__'],
+            ['QA Tests', Icons.bug_report, '__game_qa__'],
+          ]),
+          _toolGroup('ONLINE GAME SERVERS', Icons.dns, [
+            ['Server Status', Icons.health_and_safety, '__server_status__'],
+            ['Dedicated Server', Icons.dns, '__server_studio__'],
+            ['Matchmaking', Icons.shuffle, '__server_matchmaking__'],
+            ['Lobby', Icons.meeting_room, '__server_lobby__'],
+            ['Replication', Icons.sync, '__server_replication__'],
+            ['Lag Compensation', Icons.network_check, '__server_network__'],
+            ['Reconnect', Icons.refresh, '__server_reconnect__'],
+            ['Anti-Cheat', Icons.shield, '__server_anticheat__'],
+            ['Player Data', Icons.storage, '__server_data__'],
+            ['Leaderboards', Icons.leaderboard, '__server_leaderboard__'],
+            ['Server Logs', Icons.receipt_long, '__server_logs__'],
+            ['Server Metrics', Icons.analytics, '__server_metrics__'],
+            ['Autoscaling', Icons.auto_graph, '__server_scale__'],
+          ]),
+          _toolGroup('GAME BACKEND', Icons.cloud, [
+            ['Accounts', Icons.account_circle, '__backend_accounts__'],
+            ['Inventory', Icons.inventory_2, '__backend_inventory__'],
+            ['Progression', Icons.trending_up, '__backend_progression__'],
+            ['Friends', Icons.people, '__backend_friends__'],
+            ['Cloud Save', Icons.cloud_upload, '__backend_save__'],
+            ['Match History', Icons.history, '__backend_history__'],
+            ['Chat', Icons.chat, '__backend_chat__'],
+            ['Analytics', Icons.analytics, '__backend_analytics__'],
+          ]),
           _toolGroup('GAME PRODUCTION', Icons.sports_esports, [
             ['Game Project Check', Icons.rule, 'godot --headless --path . --editor --quit'],
             ['Import Assets', Icons.inventory_2, 'godot --headless --path . --editor --quit --import'],
@@ -636,7 +681,715 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             });
             return;
           }
-          terminal.text = command == '__toolchain_check__' ? 'toolchain status' : command;
+          const gameCommands = <String, String>{
+            '__game_world__':'godot --headless --path . --editor --quit',
+            '__game_terrain__':'find . -maxdepth 4 -type f | grep -E '\\.(tscn|glb|gltf|obj|fbx)
+          runCommand();
+        },
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 11)));
+
+  Widget _targetButton(String label, String value, IconData icon) => ElevatedButton.icon(
+        onPressed: busy ? null : () => setState(() => target = value),
+        icon: Icon(icon, size: 15),
+        label: Text(label, style: const TextStyle(fontSize: 10)));
+
+  Widget _explorer() => Container(
+        color: const Color(0xFF17181C),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _sectionHeader('EXPLORER', Icons.folder_open),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(children: [
+              Expanded(child: Text(treePath.isEmpty ? 'Workspace' : treePath,
+                  overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))),
+              IconButton(tooltip: 'Refresh', onPressed: busy ? null : () => _loadTree(),
+                  icon: const Icon(Icons.refresh, size: 17)),
+            ]),
+          ),
+          if (treePath.isNotEmpty)
+            ListTile(dense: true, leading: const Icon(Icons.arrow_upward, size: 16),
+              title: const Text('..', style: TextStyle(fontSize: 12)),
+              onTap: () { final parts = treePath.split('/')..removeLast(); _loadTree(parts.join('/')); }),
+          Expanded(
+            child: ListView.builder(
+              itemCount: treeEntries.length,
+              itemBuilder: (_, i) {
+                final e = treeEntries[i];
+                final isDir = e['type'] == 'directory';
+                return ListTile(
+                  dense: true,
+                  leading: Icon(isDir ? Icons.folder : Icons.code, size: 16),
+                  title: Text(e['name']?.toString() ?? '', overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12)),
+                  onTap: () {
+                    final p = e['path']?.toString() ?? '';
+                    if (isDir) { _loadTree(p); } else { path.text = p; openFile(); }
+                  },
+                );
+              },
+            ),
+          ),
+        ]),
+      );
+
+  Widget _tree(String label, int indent, IconData icon, bool selected) =>
+      Container(
+        color: selected ? const Color(0xFF263248) : null,
+        padding: EdgeInsets.only(left: 10 + indent * 13.0, top: 6, bottom: 6),
+        child: Row(children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 7),
+          Expanded(
+              child: Text(label,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12))),
+          if (icon == Icons.folder)
+            const Icon(Icons.chevron_right, size: 14),
+        ]),
+      );
+
+  Widget _editorTabs() => Container(
+        height: 38,
+        color: const Color(0xFF1D1F24),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: const BoxDecoration(
+              color: Color(0xFF101114),
+              border: Border(top: BorderSide(color: Color(0xFF64B5F6))),
+            ),
+            child: const Row(children: [
+              Icon(Icons.code, size: 15),
+              SizedBox(width: 7),
+              Text('main.dart', style: TextStyle(fontSize: 12)),
+              SizedBox(width: 10),
+              Text('×', style: TextStyle(color: Colors.grey)),
+            ]),
+          ),
+          const Spacer(),
+          IconButton(
+              tooltip: 'Open',
+              onPressed: busy ? null : openFile,
+              icon: const Icon(Icons.folder_open, size: 17)),
+          IconButton(
+              tooltip: 'Save',
+              onPressed: busy ? null : saveFile,
+              icon: const Icon(Icons.save_outlined, size: 17)),
+        ]),
+      );
+
+  Widget _editor() => Container(
+        color: const Color(0xFF101114),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: TextField(
+                controller: code,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  height: 1.45,
+                  color: Color(0xFFE6E6E6),
+                ),
+                decoration: const InputDecoration(
+                  hintText: "// اكتب كود Flutter / Dart هنا...\\n\\nimport 'package:flutter/material.dart';",
+                  hintStyle: TextStyle(fontFamily: 'monospace', fontSize: 13, color: Color(0xFF666A73)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.fromLTRB(54, 14, 14, 24),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0, top: 0, bottom: 0, width: 44,
+              child: IgnorePointer(
+                child: Container(
+                  color: const Color(0xFF15161A),
+                  alignment: Alignment.topRight,
+                  padding: const EdgeInsets.only(right: 8, top: 14),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: code,
+                    builder: (_, value, __) {
+                      final lines = (value.text.isEmpty ? 1 : '\\n'.allMatches(value.text).length + 1);
+                      return SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Text(
+                          List.generate(lines, (i) => (i + 1).toString()).join('\\n'),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.45, color: Color(0xFF555963)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10, top: 8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: const Color(0xFF25272D), borderRadius: BorderRadius.circular(6)),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  child: Text('Dart • Flutter', style: TextStyle(fontSize: 10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _artifactPanel() => Container(
+        color: const Color(0xFF17181C),
+        padding: const EdgeInsets.all(10),
+        child: Row(children: [
+          const Icon(Icons.android, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(
+            artifacts.isEmpty ? 'APK: بعد نجاح Build راح يظهر الـArtifact هنا' :
+              'APK جاهز: ' + artifacts.map((a) => a['name']?.toString() ?? 'artifact').join(', '),
+            style: const TextStyle(fontSize: 11),
+          )),
+          if (artifacts.isNotEmpty)
+            IconButton(
+              tooltip: 'فتح Artifact',
+              icon: const Icon(Icons.open_in_new, size: 18),
+              onPressed: () async {
+                final url = artifacts.first['downloadUrl']?.toString();
+                if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                  await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+        ]),
+      );
+
+  Widget _preview() => Container(
+        color: const Color(0xFF17181C),
+        child: Column(children: [
+          _sectionHeader('FLUTTER PREVIEW', Icons.phone_android),
+          _artifactPanel(),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(26, 8, 26, 18),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B0C0E),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF3A3D44)),
+              ),
+              child: previewController == null
+                  ? const Center(child: Text('Press Run to start the real Flutter debug preview'))
+                  : WebViewWidget(controller: previewController!),
+            ),
+          ),
+        ]),
+      );
+
+  Widget _bottomPanel() => SizedBox(
+        height: 185,
+        child: Column(children: [
+          Row(children: [
+            _panelTab('TERMINAL', 'terminal'),
+            _panelTab('PROBLEMS', 'problems'),
+            _panelTab('OUTPUT', 'output'),
+            _panelTab('DEBUG CONSOLE', 'debug'),
+            _panelTab('DEVTOOLS', 'devtools'),
+            const Spacer(),
+          ]),
+          Expanded(child: panel == 'devtools' ? _devtools() : _terminalPanel()),
+        ]),
+      );
+
+  Widget _devtools() => Container(
+        color: const Color(0xFF0D0E10),
+        child: devtoolsController == null
+            ? const Center(child: Text('Start Debug to connect Flutter DevTools'))
+            : WebViewWidget(controller: devtoolsController!),
+      );
+
+  Widget _panelTab(String label, String id) => TextButton(
+        onPressed: () => setState(() => panel = id),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 10,
+                color: panel == id
+                    ? Colors.white
+                    : const Color(0xFF8D919A))),
+      );
+
+  Widget _terminalPanel() => Container(
+        color: const Color(0xFF0D0E10),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Column(children: [
+          Expanded(
+            child: SingleChildScrollView(
+              reverse: true,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Text(status,
+                    style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Color(0xFFB8BDC7))),
+              ),
+            ),
+          ),
+          Row(children: [
+            const Text(r'$ ', style: TextStyle(fontFamily: 'monospace')),
+            Expanded(
+              child: TextField(
+                controller: terminal,
+                onSubmitted: (_) => runCommand(),
+                style:
+                    const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                decoration: const InputDecoration(
+                    hintText: 'flutter analyze',
+                    border: InputBorder.none,
+                    isDense: true),
+              ),
+            ),
+            IconButton(
+                onPressed: busy ? null : runCommand,
+                icon: const Icon(Icons.play_arrow, size: 18)),
+          ]),
+        ]),
+      );
+
+  Widget _mobileNavigation() => Container(
+        height: 54,
+        color: const Color(0xFF18191D),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _nav(Icons.code, 'Code', 'editor'),
+              _nav(Icons.phone_android, 'Preview', 'preview'),
+              _nav(Icons.terminal, 'Terminal', 'terminal'),
+              _nav(Icons.build_circle, 'Flutter', 'tools'),
+              _nav(Icons.account_tree, 'Inspector', 'devtools'),
+              IconButton(
+                  tooltip: 'Computer mode',
+                  onPressed: () => setState(() => computerMode = true),
+                  icon: const Icon(Icons.desktop_windows)),
+            ]),
+      );
+
+  Widget _nav(IconData icon, String label, String id) => TextButton(
+        onPressed: () => setState(() => panel = id),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 18),
+          Text(label, style: const TextStyle(fontSize: 9)),
+        ]),
+      );
+
+  Widget _sectionHeader(String label, IconData icon) => SizedBox(
+        height: 38,
+        child: Row(children: [
+          const SizedBox(width: 12),
+          Icon(icon, size: 16),
+          const SizedBox(width: 7),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .6)),
+        ]),
+      );
+
+  Widget _statusBar() => Container(
+        height: 26,
+        color: const Color(0xFF24262B),
+        child: Row(children: [
+          const SizedBox(width: 10),
+          Icon(busy ? Icons.sync : Icons.check_circle_outline, size: 13),
+          const SizedBox(width: 6),
+          Expanded(
+              child: Text(busy ? 'Working...' : status,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10))),
+          Text(target.toUpperCase(), style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 10),
+        ]),
+      );
+}
+ | head -200',
+            '__game_characters__':'find . -maxdepth 5 -type f | grep -Ei 'character|player|npc|enemy' | head -200',
+            '__game_combat__':'find . -maxdepth 5 -type f | grep -Ei 'combat|weapon|damage|health' | head -200',
+            '__game_weapons__':'find . -maxdepth 5 -type f | grep -Ei 'weapon|gun|rifle|ammo' | head -200',
+            '__game_vehicles__':'find . -maxdepth 5 -type f | grep -Ei 'vehicle|car|truck' | head -200',
+            '__game_ai__':'find . -maxdepth 5 -type f | grep -Ei 'ai|enemy|npc|behavior' | head -200',
+            '__game_navigation__':'find . -maxdepth 5 -type f | grep -Ei 'navigation|path|navmesh' | head -200',
+            '__game_animation__':'find . -maxdepth 5 -type f | grep -Ei 'animation|anim|rig' | head -200',
+            '__game_cinematics__':'find . -maxdepth 5 -type f | grep -Ei 'cutscene|cinematic|dialog' | head -200',
+            '__game_vfx__':'find . -maxdepth 5 -type f | grep -Ei 'vfx|particle|effect' | head -200',
+            '__game_audio__':'find . -maxdepth 5 -type f | grep -Ei '\\.(wav|ogg|mp3)
+          runCommand();
+        },
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 11)));
+
+  Widget _targetButton(String label, String value, IconData icon) => ElevatedButton.icon(
+        onPressed: busy ? null : () => setState(() => target = value),
+        icon: Icon(icon, size: 15),
+        label: Text(label, style: const TextStyle(fontSize: 10)));
+
+  Widget _explorer() => Container(
+        color: const Color(0xFF17181C),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _sectionHeader('EXPLORER', Icons.folder_open),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(children: [
+              Expanded(child: Text(treePath.isEmpty ? 'Workspace' : treePath,
+                  overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))),
+              IconButton(tooltip: 'Refresh', onPressed: busy ? null : () => _loadTree(),
+                  icon: const Icon(Icons.refresh, size: 17)),
+            ]),
+          ),
+          if (treePath.isNotEmpty)
+            ListTile(dense: true, leading: const Icon(Icons.arrow_upward, size: 16),
+              title: const Text('..', style: TextStyle(fontSize: 12)),
+              onTap: () { final parts = treePath.split('/')..removeLast(); _loadTree(parts.join('/')); }),
+          Expanded(
+            child: ListView.builder(
+              itemCount: treeEntries.length,
+              itemBuilder: (_, i) {
+                final e = treeEntries[i];
+                final isDir = e['type'] == 'directory';
+                return ListTile(
+                  dense: true,
+                  leading: Icon(isDir ? Icons.folder : Icons.code, size: 16),
+                  title: Text(e['name']?.toString() ?? '', overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12)),
+                  onTap: () {
+                    final p = e['path']?.toString() ?? '';
+                    if (isDir) { _loadTree(p); } else { path.text = p; openFile(); }
+                  },
+                );
+              },
+            ),
+          ),
+        ]),
+      );
+
+  Widget _tree(String label, int indent, IconData icon, bool selected) =>
+      Container(
+        color: selected ? const Color(0xFF263248) : null,
+        padding: EdgeInsets.only(left: 10 + indent * 13.0, top: 6, bottom: 6),
+        child: Row(children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 7),
+          Expanded(
+              child: Text(label,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12))),
+          if (icon == Icons.folder)
+            const Icon(Icons.chevron_right, size: 14),
+        ]),
+      );
+
+  Widget _editorTabs() => Container(
+        height: 38,
+        color: const Color(0xFF1D1F24),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: const BoxDecoration(
+              color: Color(0xFF101114),
+              border: Border(top: BorderSide(color: Color(0xFF64B5F6))),
+            ),
+            child: const Row(children: [
+              Icon(Icons.code, size: 15),
+              SizedBox(width: 7),
+              Text('main.dart', style: TextStyle(fontSize: 12)),
+              SizedBox(width: 10),
+              Text('×', style: TextStyle(color: Colors.grey)),
+            ]),
+          ),
+          const Spacer(),
+          IconButton(
+              tooltip: 'Open',
+              onPressed: busy ? null : openFile,
+              icon: const Icon(Icons.folder_open, size: 17)),
+          IconButton(
+              tooltip: 'Save',
+              onPressed: busy ? null : saveFile,
+              icon: const Icon(Icons.save_outlined, size: 17)),
+        ]),
+      );
+
+  Widget _editor() => Container(
+        color: const Color(0xFF101114),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: TextField(
+                controller: code,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  height: 1.45,
+                  color: Color(0xFFE6E6E6),
+                ),
+                decoration: const InputDecoration(
+                  hintText: "// اكتب كود Flutter / Dart هنا...\\n\\nimport 'package:flutter/material.dart';",
+                  hintStyle: TextStyle(fontFamily: 'monospace', fontSize: 13, color: Color(0xFF666A73)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.fromLTRB(54, 14, 14, 24),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0, top: 0, bottom: 0, width: 44,
+              child: IgnorePointer(
+                child: Container(
+                  color: const Color(0xFF15161A),
+                  alignment: Alignment.topRight,
+                  padding: const EdgeInsets.only(right: 8, top: 14),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: code,
+                    builder: (_, value, __) {
+                      final lines = (value.text.isEmpty ? 1 : '\\n'.allMatches(value.text).length + 1);
+                      return SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Text(
+                          List.generate(lines, (i) => (i + 1).toString()).join('\\n'),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.45, color: Color(0xFF555963)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10, top: 8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: const Color(0xFF25272D), borderRadius: BorderRadius.circular(6)),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  child: Text('Dart • Flutter', style: TextStyle(fontSize: 10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _artifactPanel() => Container(
+        color: const Color(0xFF17181C),
+        padding: const EdgeInsets.all(10),
+        child: Row(children: [
+          const Icon(Icons.android, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(
+            artifacts.isEmpty ? 'APK: بعد نجاح Build راح يظهر الـArtifact هنا' :
+              'APK جاهز: ' + artifacts.map((a) => a['name']?.toString() ?? 'artifact').join(', '),
+            style: const TextStyle(fontSize: 11),
+          )),
+          if (artifacts.isNotEmpty)
+            IconButton(
+              tooltip: 'فتح Artifact',
+              icon: const Icon(Icons.open_in_new, size: 18),
+              onPressed: () async {
+                final url = artifacts.first['downloadUrl']?.toString();
+                if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                  await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+        ]),
+      );
+
+  Widget _preview() => Container(
+        color: const Color(0xFF17181C),
+        child: Column(children: [
+          _sectionHeader('FLUTTER PREVIEW', Icons.phone_android),
+          _artifactPanel(),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(26, 8, 26, 18),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B0C0E),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF3A3D44)),
+              ),
+              child: previewController == null
+                  ? const Center(child: Text('Press Run to start the real Flutter debug preview'))
+                  : WebViewWidget(controller: previewController!),
+            ),
+          ),
+        ]),
+      );
+
+  Widget _bottomPanel() => SizedBox(
+        height: 185,
+        child: Column(children: [
+          Row(children: [
+            _panelTab('TERMINAL', 'terminal'),
+            _panelTab('PROBLEMS', 'problems'),
+            _panelTab('OUTPUT', 'output'),
+            _panelTab('DEBUG CONSOLE', 'debug'),
+            _panelTab('DEVTOOLS', 'devtools'),
+            const Spacer(),
+          ]),
+          Expanded(child: panel == 'devtools' ? _devtools() : _terminalPanel()),
+        ]),
+      );
+
+  Widget _devtools() => Container(
+        color: const Color(0xFF0D0E10),
+        child: devtoolsController == null
+            ? const Center(child: Text('Start Debug to connect Flutter DevTools'))
+            : WebViewWidget(controller: devtoolsController!),
+      );
+
+  Widget _panelTab(String label, String id) => TextButton(
+        onPressed: () => setState(() => panel = id),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 10,
+                color: panel == id
+                    ? Colors.white
+                    : const Color(0xFF8D919A))),
+      );
+
+  Widget _terminalPanel() => Container(
+        color: const Color(0xFF0D0E10),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Column(children: [
+          Expanded(
+            child: SingleChildScrollView(
+              reverse: true,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Text(status,
+                    style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Color(0xFFB8BDC7))),
+              ),
+            ),
+          ),
+          Row(children: [
+            const Text(r'$ ', style: TextStyle(fontFamily: 'monospace')),
+            Expanded(
+              child: TextField(
+                controller: terminal,
+                onSubmitted: (_) => runCommand(),
+                style:
+                    const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                decoration: const InputDecoration(
+                    hintText: 'flutter analyze',
+                    border: InputBorder.none,
+                    isDense: true),
+              ),
+            ),
+            IconButton(
+                onPressed: busy ? null : runCommand,
+                icon: const Icon(Icons.play_arrow, size: 18)),
+          ]),
+        ]),
+      );
+
+  Widget _mobileNavigation() => Container(
+        height: 54,
+        color: const Color(0xFF18191D),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _nav(Icons.code, 'Code', 'editor'),
+              _nav(Icons.phone_android, 'Preview', 'preview'),
+              _nav(Icons.terminal, 'Terminal', 'terminal'),
+              _nav(Icons.build_circle, 'Flutter', 'tools'),
+              _nav(Icons.account_tree, 'Inspector', 'devtools'),
+              IconButton(
+                  tooltip: 'Computer mode',
+                  onPressed: () => setState(() => computerMode = true),
+                  icon: const Icon(Icons.desktop_windows)),
+            ]),
+      );
+
+  Widget _nav(IconData icon, String label, String id) => TextButton(
+        onPressed: () => setState(() => panel = id),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 18),
+          Text(label, style: const TextStyle(fontSize: 9)),
+        ]),
+      );
+
+  Widget _sectionHeader(String label, IconData icon) => SizedBox(
+        height: 38,
+        child: Row(children: [
+          const SizedBox(width: 12),
+          Icon(icon, size: 16),
+          const SizedBox(width: 7),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .6)),
+        ]),
+      );
+
+  Widget _statusBar() => Container(
+        height: 26,
+        color: const Color(0xFF24262B),
+        child: Row(children: [
+          const SizedBox(width: 10),
+          Icon(busy ? Icons.sync : Icons.check_circle_outline, size: 13),
+          const SizedBox(width: 6),
+          Expanded(
+              child: Text(busy ? 'Working...' : status,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10))),
+          Text(target.toUpperCase(), style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 10),
+        ]),
+      );
+}
+ | head -200',
+            '__game_multiplayer__':'git status --short',
+            '__server_studio__':'node --version && python3 --version',
+            '__server_status__':'node --version',
+            '__server_matchmaking__':'find . -maxdepth 5 -type f | grep -Ei 'match|lobby|server' | head -200',
+            '__server_lobby__':'find . -maxdepth 5 -type f | grep -Ei 'lobby|room|match' | head -200',
+            '__server_replication__':'find . -maxdepth 5 -type f | grep -Ei 'replic|network|rpc' | head -200',
+            '__server_network__':'find . -maxdepth 5 -type f | grep -Ei 'network|latency|ping' | head -200',
+            '__server_reconnect__':'find . -maxdepth 5 -type f | grep -Ei 'reconnect|session' | head -200',
+            '__server_anticheat__':'find . -maxdepth 5 -type f | grep -Ei 'anti.?cheat|security' | head -200',
+            '__server_data__':'find . -maxdepth 5 -type f | grep -Ei 'database|postgres|redis|player' | head -200',
+            '__server_leaderboard__':'find . -maxdepth 5 -type f | grep -Ei 'leaderboard|ranking|score' | head -200',
+            '__server_logs__':'find . -maxdepth 5 -type f | grep -Ei 'log|logger' | head -200',
+            '__server_metrics__':'find . -maxdepth 5 -type f | grep -Ei 'metric|telemetry|analytics' | head -200',
+            '__server_scale__':'find . -maxdepth 5 -type f | grep -Ei 'docker|kubernetes|railway|terraform' | head -200',
+            '__backend_accounts__':'find . -maxdepth 5 -type f | grep -Ei 'auth|account|user' | head -200',
+            '__backend_inventory__':'find . -maxdepth 5 -type f | grep -Ei 'inventory|item|skin' | head -200',
+            '__backend_progression__':'find . -maxdepth 5 -type f | grep -Ei 'xp|level|progress' | head -200',
+            '__backend_friends__':'find . -maxdepth 5 -type f | grep -Ei 'friend|party' | head -200',
+            '__backend_save__':'find . -maxdepth 5 -type f | grep -Ei 'save|storage|database' | head -200',
+            '__backend_history__':'find . -maxdepth 5 -type f | grep -Ei 'history|match' | head -200',
+            '__backend_chat__':'find . -maxdepth 5 -type f | grep -Ei 'chat|message' | head -200',
+            '__backend_analytics__':'find . -maxdepth 5 -type f | grep -Ei 'analytics|event|metric' | head -200',
+          };
+          if (gameCommands[command]) {
+            terminal.text = gameCommands[command]!;
+          } else {
+            terminal.text = command == '__toolchain_check__' ? 'toolchain status' : command;
+          }
           runCommand();
         },
         icon: Icon(icon, size: 16),
