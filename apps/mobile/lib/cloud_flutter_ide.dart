@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:flutter_monaco/flutter_monaco.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 
@@ -31,9 +30,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   String? previewUrl;
   String? devtoolsUrl;
   WebViewController? devtoolsController;
-  String? lspUrl;
-  MonacoController? monacoController;
-  LanguageServerConnection? lspConnection;
+
   WebSocketChannel? terminalSocket;
   String panel = 'editor';
   String target = 'apk';
@@ -75,8 +72,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
       });
       await _loadTree();
       await _connectTerminal();
-      await _connectLsp();
-      await _startDebug();
+            await _startDebug();
       setState(() => status = 'Cloud Flutter debug workspace is running');
     } catch (e) {
       setState(() => status = 'Workspace error: ' + e.toString());
@@ -118,19 +114,6 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     }
   }
 
-  Future<void> _connectLsp() async {
-    try {
-      final r = await request('POST', '/v1/flutter/lsp-url', data: {
-        'sessionId': sessionId,
-        'repo': repo.text.trim(),
-        'branch': branch.text.trim(),
-      });
-      lspUrl = r['url']?.toString();
-      if (mounted) setState(() => status = 'Dart IntelliSense endpoint ready');
-    } catch (e) {
-      if (mounted) setState(() => status = 'Dart LSP unavailable: ' + e.toString());
-    }
-  }
 
   Future<void> _attachLsp(MonacoController controller) async {
     monacoController = controller;
