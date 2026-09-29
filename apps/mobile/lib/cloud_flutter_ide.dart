@@ -506,11 +506,14 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
                   child: ValueListenableBuilder<TextEditingValue>(
                     valueListenable: code,
                     builder: (_, value, __) {
-                      final lines = value.text.isEmpty ? 1 : '\\n'.allMatches(value.text).length + 1;
-                      return Text(
-                        List.generate(lines, (i) => (i + 1).toString()).join('\\n'),
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.45, color: Color(0xFF555963)),
+                      final lines = (value.text.isEmpty ? 1 : '\\n'.allMatches(value.text).length + 1);
+                      return SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Text(
+                          List.generate(lines, (i) => (i + 1).toString()).join('\\n'),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.45, color: Color(0xFF555963)),
+                        ),
                       );
                     },
                   ),
