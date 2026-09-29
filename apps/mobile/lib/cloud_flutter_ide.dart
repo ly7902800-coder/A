@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_monaco/flutter_monaco.dart';
 
 class CloudFlutterIdePage extends StatefulWidget {
   const CloudFlutterIdePage({super.key});
@@ -20,6 +22,11 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   Timer? timer;
   bool busy = false;
   bool computerMode = true;
+  int editorVersion = 0;
+  String treePath = '';
+  List<Map<String, dynamic>> treeEntries = [];
+  WebViewController? previewController;
+  String? previewUrl;
   String panel = 'editor';
   String target = 'apk';
   String status = 'Cloud Flutter workspace ready';
@@ -56,11 +63,11 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     setState(() => busy = true);
     try {
       await request('POST', '/v1/flutter/worker/start', data: {
-        'sessionId': sessionId,
-        'repo': repo.text.trim(),
-        'branch': branch.text.trim(),
+        'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(),
       });
-      setState(() => status = 'Workspace started');
+      await _loadTree();
+      await _startDebug();
+      setState(() => status = 'Cloud Flutter debug workspace is running');
     } catch (e) {
       setState(() => status = 'Workspace error: ' + e.toString());
     } finally {
@@ -68,15 +75,64 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     }
   }
 
+  Future<void> _startDebug() async {
+    final r = await request('POST', '/v1/flutter/debug/start', data: {
+      'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(),
+    });
+    final preview = await request('POST', '/v1/flutter/preview-url', data: {'sessionId': sessionId});
+    previewUrl = preview['url']?.toString();
+    if (previewUrl != null) {
+      previewController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(NavigationDelegate(
+          onPageStarted: (_) => setState(() => status = 'Live Flutter preview loading'),
+          onPageFinished: (_) => setState(() => status = 'Live Flutter preview connected'),
+        ))
+        ..loadRequest(Uri.parse(previewUrl!));
+    }
+    setState(() => status = 'Debug session started: ' + (r['sessionId']?.toString() ?? sessionId));
+  }
+
+  Future<void> _debugAction(String endpoint, String label) async {
+    setState(() => busy = true);
+    try {
+      await request('POST', endpoint, data: {
+        'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(),
+      });
+      setState(() => status = label + ' complete');
+    } catch (e) {
+      setState(() => status = label + ' error: ' + e.toString());
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _loadTree([String? pathValue]) async {
+    try {
+      final p = pathValue ?? treePath;
+      final r = await request('POST', '/v1/flutter/workspace/tree', data: {
+        'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(), 'path': p,
+      });
+      setState(() {
+        treePath = p;
+        treeEntries = (r['entries'] as List? ?? [])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      });
+    } catch (e) {
+      setState(() => status = 'Explorer error: ' + e.toString());
+    }
+  }
+
   Future<void> openFile() async {
     setState(() => busy = true);
     try {
-      final r = await request('GET', '/v1/flutter/workspace/file', query: {
-        'repo': repo.text.trim(),
-        'branch': branch.text.trim(),
-        'path': path.text.trim(),
+      final r = await request('POST', '/v1/flutter/workspace/file/read', data: {
+        'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(), 'path': path.text.trim(),
       });
       code.text = r['content']?.toString() ?? '';
+      editorVersion++;
       setState(() => status = 'Loaded ' + path.text.trim());
     } catch (e) {
       setState(() => status = 'Load error: ' + e.toString());
@@ -89,18 +145,13 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     setState(() => busy = true);
     try {
       await request('POST', '/v1/flutter/workspace/branch', data: {
-        'repo': repo.text.trim(),
-        'baseBranch': base.text.trim(),
-        'branch': branch.text.trim(),
+        'repo': repo.text.trim(), 'baseBranch': base.text.trim(), 'branch': branch.text.trim(),
       });
-      await request('PUT', '/v1/flutter/workspace/file', data: {
-        'repo': repo.text.trim(),
-        'branch': branch.text.trim(),
-        'path': path.text.trim(),
-        'content': code.text,
-        'message': 'Genesis Cloud Flutter edit',
+      await request('POST', '/v1/flutter/workspace/file/write', data: {
+        'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(),
+        'path': path.text.trim(), 'content': code.text, 'message': 'Genesis Cloud Flutter edit', 'sync': true,
       });
-      setState(() => status = 'Saved to GitHub workspace');
+      setState(() => status = 'Saved, committed and pushed to GitHub workspace');
     } catch (e) {
       setState(() => status = 'Save error: ' + e.toString());
     } finally {
@@ -218,12 +269,9 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             _chip(branch.text),
             const Spacer(),
             _tool(Icons.play_arrow, 'Run', startWorkspace),
-            _tool(Icons.bug_report_outlined, 'Debug',
-                () => _message('Debug worker requested')),
-            _tool(Icons.refresh, 'Hot Reload',
-                () => _message('Hot Reload needs a running debug worker')),
-            _tool(Icons.restart_alt, 'Hot Restart',
-                () => _message('Hot Restart needs a running debug worker')),
+            _tool(Icons.bug_report_outlined, 'Debug', _startDebug),
+            _tool(Icons.refresh, 'Hot Reload', () => _debugAction('/v1/flutter/debug/hot-reload', 'Hot Reload')),
+            _tool(Icons.restart_alt, 'Hot Restart', () => _debugAction('/v1/flutter/debug/hot-restart', 'Hot Restart')),
             _tool(Icons.build_outlined, 'Build', buildProject),
             IconButton(
               tooltip: computerMode ? 'Mobile mode' : 'Computer mode',
@@ -287,31 +335,34 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
           _sectionHeader('EXPLORER', Icons.folder_open),
           Padding(
             padding: const EdgeInsets.all(8),
-            child: TextField(
-              controller: repo,
-              style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search, size: 17),
-                  hintText: 'Search files',
-                  isDense: true),
-            ),
+            child: Row(children: [
+              Expanded(child: Text(treePath.isEmpty ? 'Workspace' : treePath,
+                  overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))),
+              IconButton(tooltip: 'Refresh', onPressed: busy ? null : () => _loadTree(),
+                  icon: const Icon(Icons.refresh, size: 17)),
+            ]),
           ),
-          _tree('A', 0, Icons.folder, false),
-          _tree('apps', 1, Icons.folder, false),
-          _tree('mobile', 2, Icons.folder, false),
-          _tree('lib', 3, Icons.folder, false),
-          _tree('main.dart', 4, Icons.code, true),
-          _tree('screens', 4, Icons.folder, false),
-          _tree('widgets', 4, Icons.folder, false),
-          _tree('services', 4, Icons.folder, false),
-          _tree('assets', 2, Icons.folder, false),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: OutlinedButton.icon(
-              onPressed: () => _message('New file action'),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('New File'),
+          if (treePath.isNotEmpty)
+            ListTile(dense: true, leading: const Icon(Icons.arrow_upward, size: 16),
+              title: const Text('..', style: TextStyle(fontSize: 12)),
+              onTap: () { final parts = treePath.split('/')..removeLast(); _loadTree(parts.join('/')); }),
+          Expanded(
+            child: ListView.builder(
+              itemCount: treeEntries.length,
+              itemBuilder: (_, i) {
+                final e = treeEntries[i];
+                final isDir = e['type'] == 'directory';
+                return ListTile(
+                  dense: true,
+                  leading: Icon(isDir ? Icons.folder : Icons.code, size: 16),
+                  title: Text(e['name']?.toString() ?? '', overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12)),
+                  onTap: () {
+                    final p = e['path']?.toString() ?? '';
+                    if (isDir) { _loadTree(p); } else { path.text = p; openFile(); }
+                  },
+                );
+              },
             ),
           ),
         ]),
@@ -365,42 +416,19 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
 
   Widget _editor() => Container(
         color: const Color(0xFF101114),
-        child: Stack(children: [
-          TextField(
-            controller: code,
-            expands: true,
-            maxLines: null,
-            minLines: null,
-            textAlignVertical: TextAlignVertical.top,
-            style: const TextStyle(
-                fontFamily: 'monospace', fontSize: 13, height: 1.5),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.fromLTRB(48, 14, 18, 18),
-              hintText: '// Open a Dart / Flutter file',
-            ),
+        child: MonacoEditor(
+          key: ValueKey(editorVersion),
+          initialText: code.text,
+          options: const EditorOptions(
+            language: MonacoLanguage.dart,
+            theme: MonacoTheme.vsDark,
+            fontSize: 13,
+            minimap: false,
+            wordWrap: MonacoWordWrap.off,
           ),
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 42,
-            child: Container(
-              color: const Color(0xFF15161A),
-              alignment: Alignment.topCenter,
-              padding: const EdgeInsets.only(top: 14),
-              child: const Text(
-                '1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n9\\n10\\n11\\n12',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                    color: Color(0xFF5E626B),
-                    fontFamily: 'monospace',
-                    fontSize: 11,
-                    height: 1.72),
-              ),
-            ),
-          ),
-        ]),
+          showStatusBar: true,
+          onChanged: (value) => code.text = value,
+        ),
       );
 
   Widget _preview() => Container(
@@ -410,57 +438,15 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
           Expanded(
             child: Container(
               margin: const EdgeInsets.fromLTRB(26, 8, 26, 18),
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: const Color(0xFF0B0C0E),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFF3A3D44)),
               ),
-              child: Column(children: [
-                Container(
-                  height: 32,
-                  color: const Color(0xFF202227),
-                  child: const Row(children: [
-                    SizedBox(width: 12),
-                    Icon(Icons.circle, size: 8),
-                    SizedBox(width: 5),
-                    Icon(Icons.circle, size: 8),
-                    SizedBox(width: 5),
-                    Icon(Icons.circle, size: 8),
-                  ]),
-                ),
-                const Expanded(
-                  child: Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.flutter_dash, size: 52),
-                      SizedBox(height: 12),
-                      Text('Flutter Preview',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
-                      SizedBox(height: 6),
-                      Text(
-                        'Start the cloud debug worker to attach a live preview.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Color(0xFF969AA4), fontSize: 12),
-                      ),
-                    ]),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.refresh, size: 16),
-                      SizedBox(width: 5),
-                      Text('Hot Reload'),
-                      SizedBox(width: 18),
-                      Icon(Icons.restart_alt, size: 16),
-                      SizedBox(width: 5),
-                      Text('Hot Restart'),
-                    ],
-                  ),
-                ),
-              ]),
+              child: previewController == null
+                  ? const Center(child: Text('Press Run to start the real Flutter debug preview'))
+                  : WebViewWidget(controller: previewController!),
             ),
           ),
         ]),
