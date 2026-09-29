@@ -10,6 +10,7 @@ import 'flutter_feature_lab.dart';
 import 'flutter_buttons_lab.dart';
 import 'flutter_inputs_lab.dart';
 import 'flutter_layout_lab.dart';
+import 'flutter_completion_lab.dart';
 import 'package:http/http.dart' as http;
 
 // -----------------------------------------------------------------------------
@@ -72,6 +73,10 @@ final router = GoRouter(
     GoRoute(
       path: '/layout-lab',
       builder: (context, state) => const LayoutPage(),
+    ),
+    GoRoute(
+      path: '/flutter-completion',
+      builder: (context, state) => const FlutterCompletionLab(),
     ),
   ],
 );
@@ -341,6 +346,12 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   title: const Text('Layout Lab'),
                   subtitle: const Text('التخطيط والتجاوب'),
                   onTap: () => context.go('/layout-lab'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.rocket_launch),
+                  title: const Text('Flutter Production Lab'),
+                  subtitle: const Text('Scrolling, navigation, state, networking, media, testing, production'),
+                  onTap: () => context.go('/flutter-completion'),
                 ),
                 const Divider(),
                 for (final item in [
