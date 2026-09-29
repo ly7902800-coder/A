@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - apps/mobile/**
+      - .devcontainer/**
       - .github/workflows/genesis-apk.yml
 
 jobs:
