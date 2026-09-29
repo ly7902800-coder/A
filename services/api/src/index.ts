@@ -11,6 +11,14 @@ import { buildWorkerCapabilities, createBuildJob, getBuildJob } from "./build-wo
 const oauthProjects = new Map<string,{projectId:string;platform:"github"|"cloudflare"|"figma"|"google"|"google-cloud";userId:string}>();
 const port=Number(process.env.PORT??8080);
 const gateway=createAiGateway();
+const CONTENT_SOURCE_PRESETS = [
+  {id:"short-video",name:"Short Video Feed",formats:["mp4","webm"],maxDurationSec:180,mode:"vertical",provider:"platform-api-or-user-upload"},
+  {id:"long-video",name:"Long Video Feed",formats:["mp4","webm","mov"],maxDurationSec:null,mode:"landscape-or-player",provider:"platform-api-or-user-upload"},
+  {id:"mixed-video",name:"Mixed Video Feed",formats:["mp4","webm","mov"],maxDurationSec:null,mode:"adaptive",provider:"platform-api-or-user-upload"},
+  {id:"image-feed",name:"Image / Post Feed",formats:["jpg","jpeg","png","webp"],maxDurationSec:null,mode:"adaptive",provider:"platform-api-or-user-upload"},
+  {id:"live",name:"Live Stream Feed",formats:["hls"],maxDurationSec:null,mode:"player",provider:"platform-api-or-user-upload"},
+];
+
 const TOOL_INTEGRATIONS: Array<{id:string;name:string;category:string;status:string}> = [
   {id:"antigravity",name:"Antigravity",category:"AI Coding",status:"available"},
   {id:"vscode",name:"VS Code",category:"IDE",status:"available"},
@@ -46,6 +54,8 @@ const server=createServer(async(request,response)=>{
   if(url.pathname==="/v1/auth/logout"&&request.method==="POST"){const t=bearer(request.headers.authorization);if(!t)return sendJson(response,401,{error:"Authentication required"});return sendJson(response,200,{ok:await logout(t)});}
   if(url.pathname==="/v1/auth/me"&&request.method==="GET"){const user=await requireAuth(request);return sendJson(response,200,{user});}
   if(url.pathname==="/health"&&request.method==="GET"){const database=await dbHealth();return sendJson(response,200,{ok:true,service:"genesis-api",database});}
+  if(url.pathname==="/v1/content/sources"&&request.method==="GET"){await requireAuth(request);return sendJson(response,200,{sources:CONTENT_SOURCE_PRESETS,policy:"Use official platform APIs, licensed feeds, or user-owned uploads. No scraping or bypassing platform access controls."});}
+  if(url.pathname==="/v1/content/feed-plan"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);const kind=typeof b.kind==="string"?b.kind:"mixed-video";const preset=CONTENT_SOURCE_PRESETS.find(x=>x.id===kind)||CONTENT_SOURCE_PRESETS[2];return sendJson(response,200,{ok:true,source:preset,feed:{ranking:["freshness","engagement","user-preferences"],delivery:"CDN-ready",transcoding:"worker-ready",moderation:"hook-ready",pagination:"cursor",realtime:kind==="live"},next:"Connect an official API/licensed source or enable user uploads to ingest real media."});}
   if(url.pathname==="/v1/self-development/run"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.objective!=="string"||!b.objective.trim())return sendJson(response,400,{error:"objective is required"});const mode=b.mode==="self-improve"?"self-improve":"project";const result=await runSelfDevelopment({objective:b.objective,repo:typeof b.repo==="string"?b.repo:undefined,base:typeof b.base==="string"?b.base:undefined,mode,maxIterations:typeof b.maxIterations==="number"?b.maxIterations:8,maxFilesPerIteration:typeof b.maxFilesPerIteration==="number"?b.maxFilesPerIteration:12,createPullRequest:b.createPullRequest!==false});return sendJson(response,200,result);}
   if(url.pathname==="/v1/coding/execute"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.objective!=="string"||!b.objective.trim())return sendJson(response,400,{error:"objective is required"});return sendJson(response,200,await gateway.executeCodingTask({repo:typeof b.repo==="string"?b.repo:undefined,objective:b.objective,base:typeof b.base==="string"?b.base:undefined,createPullRequest:b.createPullRequest!==false,model:typeof b.model==="string"?b.model:undefined}));}
   if(url.pathname==="/v1/agents/run"&&request.method==="POST"){await requireAuth(request);const b=await readJson(request);if(typeof b.objective!=="string"||!b.objective.trim())return sendJson(response,400,{error:"objective is required"});return sendJson(response,200,await gateway.runMultiAgentTeam(b.objective,typeof b.context==="string"?b.context:"",typeof b.model==="string"?b.model:"anthropic/claude-opus-5-5"));}
