@@ -20,7 +20,7 @@ import 'package:http/http.dart' as http;
 // -----------------------------------------------------------------------------
 
 final apiBaseUrlProvider = Provider<String>(
-  (ref) => const String.fromEnvironment('GENESIS_API_URL', defaultValue: ''),
+  (ref) => const String.fromEnvironment('GENESIS_API_URL', defaultValue: 'https://genesis-api-production-f3e0.up.railway.app'),
 );
 
 final selectedModelProvider = StateProvider<String>((ref) => 'auto');
