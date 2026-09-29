@@ -43,6 +43,7 @@ import { runMultiAgentTeam } from "./multi-agent-runtime.js";
 import { runOpenAIAgent } from "./openai-agents-sdk.js";
 import { createBuildPlan, dispatchBuild, uiScreenSpec, seoGeoAudit } from "./platform-factory.js";
 import { runSelfDevelopment, type SelfDevelopmentInput } from "./self-development-engine.js";
+import { writeFlutterFile, readFlutterFile, ensureFlutterBranch } from "./flutter-workspace.js";
 
 export function createAiGateway(){
  const executor={execute:(request:ChatRequest)=>routeChat(request)};
@@ -60,7 +61,7 @@ export function createAiGateway(){
   createBrainPlan,createMission,getMission,listMissions,updateMissionStep,nextReadySteps,getProjectDNA,upsertProjectDNA,addProjectDecision,createCheckpoint,listCheckpoints,latestCheckpoint,createHealingPlan,planParallelAgents,
   listPlatformTargets,discoverPlatform,planPlatformMission,createBrowserSession,browserPolicy,requestAccountAccess,approveAccountAccess,revokeAccountAccess,listAccountAccess,createLinkedBrowserSession,approveLinkedBrowserSession,getLinkedBrowserSession,revokeLinkedBrowserSession,listConnectors,resolveConnector,createIntegrationPlan,executePlatformMission,
   executeConnectorAction:(input:ConnectorActionInput)=>executeConnectorAction(input),executeCodingTask,registerMcpServer,listMcpServers,listMcpTools,callMcpTool,disconnectMcpServer,runMultiAgentTeam ,runOpenAIAgent,dispatchBuild,uiScreenSpec,seoGeoAudit,
-  runSelfDevelopment
+  runSelfDevelopment,writeFlutterFile,readFlutterFile,ensureFlutterBranch
  };
 }
 export { runSelfDevelopment } from "./self-development-engine.js";
