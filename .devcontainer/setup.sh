@@ -13,16 +13,24 @@ flutter doctor -v || true
 
 cd apps/mobile
 
-if [ ! -d android ]; then
-  flutter create --platforms=android --project-name genesis_ai --org com.genesisai .
-fi
-
+# Keep the repository as a normal Flutter project while adding the cloud targets.
+flutter create --platforms=android,web --project-name genesis_ai --org com.genesisai .
 flutter pub get
 
+cd ../..
+chmod +x tool/cloud_ide.sh || true
+
 echo
-echo "Genesis AI Flutter environment is ready."
-echo "Run: flutter analyze"
-echo "Run: flutter test"
-echo "Run: flutter run -d chrome"
-echo "Build APK: flutter build apk --release"
-echo "Build AAB: flutter build appbundle --release"
+echo "=============================================="
+echo " Genesis AI - Flutter Cloud IDE is ready"
+echo "=============================================="
+echo "Preview:  ./tool/cloud_ide.sh preview"
+echo "Analyze:  ./tool/cloud_ide.sh analyze"
+echo "Tests:    ./tool/cloud_ide.sh test"
+echo "APK:      ./tool/cloud_ide.sh apk"
+echo "AAB:      ./tool/cloud_ide.sh aab"
+echo "Doctor:   ./tool/cloud_ide.sh doctor"
+echo
+echo "Codespaces Preview: forward port 8080"
+echo "Android Emulator: use a local/device target or CI build;"
+echo "Codespaces does not provide a full nested Android emulator."
