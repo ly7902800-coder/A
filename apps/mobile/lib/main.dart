@@ -288,6 +288,36 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
     }
   }
 
+  void _showApiKeyDialog() {
+    final provider = TextEditingController();
+    final key = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('إضافة API Key'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: provider, decoration: const InputDecoration(labelText: 'Provider (OpenAI / Anthropic / Gemini / xAI...)')),
+          const SizedBox(height: 10),
+          TextField(controller: key, obscureText: true, decoration: const InputDecoration(labelText: 'API Key')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          FilledButton(onPressed: () async {
+            try {
+              await api('/v1/credentials/api-key', method: 'POST', body: {
+                'provider': provider.text.trim(), 'apiKey': key.text.trim(),
+              });
+              if (mounted) {
+                Navigator.pop(context);
+                _snack('تم حفظ المفتاح بشكل مشفر وربطه بحسابك');
+              }
+            } catch (e) { if (mounted) _snack(e.toString()); }
+          }, child: const Text('اتصال')),
+        ],
+      ),
+    );
+  }
+
   void _snack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -355,6 +385,12 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   currentAccountPicture: CircleAvatar(
                     child: Icon(Icons.auto_awesome),
                   ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.key),
+                  title: const Text('API Keys'),
+                  subtitle: const Text('اربط API مباشرة بالمشروع بشكل آمن'),
+                  onTap: () { Navigator.pop(context); _showApiKeyDialog(); },
                 ),
                 ListTile(
                   leading: const Icon(Icons.code),
