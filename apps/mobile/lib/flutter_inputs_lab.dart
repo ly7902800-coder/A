@@ -19,7 +19,8 @@ class _InputsPageState extends State<InputsPage> {
   final passFocus = FocusNode();
   final confirmFocus = FocusNode();
   bool hidePass = true, hideConfirm = true, agree = false, notifications = true, submitting = false;
-  String gender = 'ذكر',? city;
+  String gender = 'ذكر';
+  String? city;
   double age = 25;
   RangeValues budget = const RangeValues(20, 60);
   DateTime? birthDate;
