@@ -785,7 +785,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             '__game_world__': 'godot --headless --path . --editor --quit',
             '__game_terrain__': r"find . -maxdepth 4 -type f | grep -E '\.(tscn|glb|gltf|obj|fbx)$' | head -200",
           };
-          terminal.text = mapped[command] ?? command == '__toolchain_check__' ? 'toolchain status' : (mapped[command] ?? command);
+          terminal.text = mapped[command] ?? (command == '__toolchain_check__' ? 'toolchain status' : command);
           runCommand();
         },
         icon: Icon(icon, size: 16),
