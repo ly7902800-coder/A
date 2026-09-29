@@ -346,6 +346,62 @@ wss.on("connection", async (ws, req) => {
   }
 });
 
+const lspWss = new WebSocketServer({ server, path: "/v1/lsp/dart" });
+lspWss.on("connection", async (ws, req) => {
+  let proc = null;
+  let buffer = Buffer.alloc(0);
+  try {
+    const url = new URL(req.url || "/", "http://localhost");
+    const sessionId = safeId(url.searchParams.get("sessionId"));
+    const supplied = url.searchParams.get("access") || "";
+    const secret = process.env.WORKER_SHARED_SECRET || "";
+    const expected = crypto.createHmac("sha256", secret).update("lsp:" + sessionId).digest("hex");
+    if (!secret || supplied.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) {
+      ws.close(1008, "authentication failed");
+      return;
+    }
+    const repo = url.searchParams.get("repo") || "";
+    const branch = url.searchParams.get("branch") || "";
+    if (!repo || !branch) {
+      ws.close(1008, "repo and branch are required");
+      return;
+    }
+    const s = await ensureSession(sessionId, repo, branch);
+    proc = spawn("dart", ["language-server", "--protocol=lsp", "--client-id=genesis-cloud-ide", "--client-version=1.0"], {
+      cwd: projectRoot(s.dir),
+      env: { ...process.env, TERM: "xterm-256color" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    proc.stderr.on("data", x => log(s, "lsp", x.toString()));
+    proc.on("close", code => { if (ws.readyState === 1) ws.close(1011, "Dart language server exited: " + code); });
+
+    const drain = () => {
+      while (true) {
+        const headerEnd = buffer.indexOf(Buffer.from("\r\n\r\n"));
+        if (headerEnd < 0) return;
+        const header = buffer.subarray(0, headerEnd).toString("utf8");
+        const match = header.match(/Content-Length:\s*(\d+)/i);
+        if (!match) { buffer = buffer.subarray(headerEnd + 4); continue; }
+        const length = Number(match[1]);
+        const start = headerEnd + 4;
+        if (buffer.length < start + length) return;
+        const payload = buffer.subarray(start, start + length).toString("utf8");
+        buffer = buffer.subarray(start + length);
+        ws.send(payload);
+      }
+    };
+    proc.stdout.on("data", chunk => { buffer = Buffer.concat([buffer, chunk]); drain(); });
+    ws.on("message", raw => {
+      const payload = Buffer.from(String(raw), "utf8");
+      proc.stdin.write("Content-Length: " + payload.length + "\r\n\r\n");
+      proc.stdin.write(payload);
+    });
+    ws.on("close", () => { if (proc) proc.kill("SIGTERM"); });
+  } catch (e) {
+    ws.close(1011, e instanceof Error ? e.message : String(e));
+  }
+});
+
 setInterval(async () => {
   const ttl = Number(process.env.WORKSPACE_TTL_MS || 3600000);
   for (const [id, s] of sessions) {
