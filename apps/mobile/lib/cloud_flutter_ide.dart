@@ -31,6 +31,9 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   String? previewUrl;
   String? devtoolsUrl;
   WebViewController? devtoolsController;
+  String? lspUrl;
+  MonacoController? monacoController;
+  LanguageServerConnection? lspConnection;
   WebSocketChannel? terminalSocket;
   String panel = 'editor';
   String target = 'apk';
@@ -72,6 +75,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
       });
       await _loadTree();
       await _connectTerminal();
+      await _connectLsp();
       await _startDebug();
       setState(() => status = 'Cloud Flutter debug workspace is running');
     } catch (e) {
@@ -111,6 +115,36 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
       if (mounted) setState(() => status = 'Live terminal connected');
     } catch (e) {
       if (mounted) setState(() => status = 'Terminal connection error: ' + e.toString());
+    }
+  }
+
+  Future<void> _connectLsp() async {
+    try {
+      final r = await request('POST', '/v1/flutter/lsp-url', data: {
+        'sessionId': sessionId,
+        'repo': repo.text.trim(),
+        'branch': branch.text.trim(),
+      });
+      lspUrl = r['url']?.toString();
+      if (mounted) setState(() => status = 'Dart IntelliSense endpoint ready');
+    } catch (e) {
+      if (mounted) setState(() => status = 'Dart LSP unavailable: ' + e.toString());
+    }
+  }
+
+  Future<void> _attachLsp(MonacoController controller) async {
+    monacoController = controller;
+    final url = lspUrl;
+    if (url == null || url.isEmpty) return;
+    try {
+      await lspConnection?.disconnect();
+      lspConnection = await controller.connectLanguageServer(
+        id: 'dart',
+        transport: LspWebSocketTransport(url: Uri.parse(url)),
+      );
+      if (mounted) setState(() => status = 'Dart IntelliSense connected');
+    } catch (e) {
+      if (mounted) setState(() => status = 'Dart IntelliSense error: ' + e.toString());
     }
   }
 
@@ -279,6 +313,8 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   void dispose() {
     timer?.cancel();
     terminalSocket?.sink.close();
+    lspConnection?.disconnect();
+    monacoController?.dispose();
     repo.dispose();
     branch.dispose();
     base.dispose();
@@ -481,6 +517,16 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             wordWrap: MonacoWordWrap.off,
           ),
           showStatusBar: true,
+          page: MonacoPageConfig(
+            allowedConnectSources: lspUrl == null
+                ? const []
+                : <String>[
+                    Uri.parse(lspUrl!).scheme +
+                        '://' +
+                        Uri.parse(lspUrl!).authority,
+                  ],
+          ),
+          onReady: (controller) => unawaited(_attachLsp(controller)),
           onContentChanged: (value) => code.text = value,
         ),
       );
