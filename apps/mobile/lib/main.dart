@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'flutter_feature_lab.dart';
 import 'flutter_buttons_lab.dart';
 import 'flutter_inputs_lab.dart';
 import 'flutter_layout_lab.dart';
 import 'flutter_completion_lab.dart';
+import 'cloud_flutter_ide.dart';
 import 'package:http/http.dart' as http;
 
 // -----------------------------------------------------------------------------
@@ -77,6 +79,10 @@ final router = GoRouter(
     GoRoute(
       path: '/flutter-completion',
       builder: (context, state) => const FlutterCompletionLab(),
+    ),
+    GoRoute(
+      path: '/cloud-flutter',
+      builder: (context, state) => const CloudFlutterIdePage(),
     ),
   ],
 );
@@ -197,6 +203,8 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
       );
 
       setState(() => token = data['token'] ?? '');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('genesis_auth_token', token);
       await loadModels();
       if (mounted) context.go('/home');
     } catch (e) {
@@ -352,6 +360,12 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   title: const Text('Flutter Production Lab'),
                   subtitle: const Text('Scrolling, navigation, state, networking, media, testing, production'),
                   onTap: () => context.go('/flutter-completion'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: const Text('Cloud Flutter IDE'),
+                  subtitle: const Text('اكتب Dart ثم احفظه وابنه على Flutter عبر GitHub Actions'),
+                  onTap: () => context.go('/cloud-flutter'),
                 ),
                 const Divider(),
                 for (final item in [
