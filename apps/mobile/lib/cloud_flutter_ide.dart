@@ -88,6 +88,8 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     }
   }
 
+  void _snack(String message) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message))); }
+
   Future<void> _openIntegrations() async {
     try {
       final data = await request('GET', '/v1/integrations');
