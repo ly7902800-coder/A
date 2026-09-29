@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'flutter_feature_lab.dart';
 import 'package:http/http.dart' as http;
 
 // -----------------------------------------------------------------------------
@@ -51,6 +53,10 @@ final router = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const GenesisHome(),
+    ),
+    GoRoute(
+      path: '/flutter-lab',
+      builder: (context, state) => const FlutterFeatureLab(),
     ),
   ],
 );
@@ -289,6 +295,13 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                     style: TextStyle(fontSize: 28),
                   ),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.widgets),
+                  title: const Text('Flutter Feature Lab'),
+                  subtitle: const Text('Widgets, layout, animation and device APIs'),
+                  onTap: () => context.go('/flutter-lab'),
+                ),
+                const Divider(),
                 for (final item in [
                   'Chat',
                   'Projects',
