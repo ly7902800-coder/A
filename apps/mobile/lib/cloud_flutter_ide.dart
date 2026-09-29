@@ -90,6 +90,52 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
 
   void _snack(String message) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message))); }
 
+  Future<void> _openContentStudio() async {
+    try {
+      final data = await request('GET', '/v1/content/sources');
+      if (!mounted) return;
+      final sources = (data['sources'] as List? ?? []);
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text('Genesis Content Studio', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              const Text('مصادر فيديو وصور قابلة للربط مع API رسمي أو رفع المستخدم.'),
+              const SizedBox(height: 12),
+              ...sources.map((src) => Card(
+                child: ListTile(
+                  leading: Icon(src['id'] == 'short-video' ? Icons.smartphone : Icons.video_library),
+                  title: Text(src['name'].toString()),
+                  subtitle: Text('Mode: ${src['mode']} • Provider: ${src['provider']}'),
+                  trailing: FilledButton(
+                    onPressed: () async {
+                      try {
+                        final plan = await request('POST', '/v1/content/feed-plan', data: {'kind': src['id']});
+                        if (mounted) {
+                          Navigator.pop(context);
+                          setState(() => status = 'Content feed ready: ${plan['source']?['name'] ?? src['name']}');
+                        }
+                      } catch (e) {
+                        if (mounted) _snack(e.toString());
+                      }
+                    },
+                    child: const Text('Use'),
+                  ),
+                ),
+              )),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) _snack(e.toString());
+    }
+  }
+
   Future<void> _openIntegrations() async {
     try {
       final data = await request('GET', '/v1/integrations');
@@ -386,6 +432,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             _tool(Icons.refresh, 'Hot Reload', () => _debugAction('/v1/flutter/debug/hot-reload', 'Hot Reload')),
             _tool(Icons.restart_alt, 'Hot Restart', () => _debugAction('/v1/flutter/debug/hot-restart', 'Hot Restart')),
             _tool(Icons.build_outlined, 'Build', buildProject),
+            _tool(Icons.video_library_outlined, 'Content', _openContentStudio),
             _tool(Icons.android, 'APK', () { setState(() => target = 'apk'); buildProject(); }),
             IconButton(
               tooltip: computerMode ? 'Mobile mode' : 'Computer mode',
@@ -512,6 +559,25 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             ['Godot Project Check', Icons.rule, 'godot --headless --path . --editor --quit'],
             ['Game Assets', Icons.folder_copy, 'find . -maxdepth 4 -type f -name "*.tscn" -o -name "*.godot" -o -name "*.glb" -o -name "*.gltf"'],
           ]),
+          _toolGroup('APP + WEB PLATFORM', Icons.apps, [
+            ['Backend Health', Icons.health_and_safety, 'node --version'],
+            ['Video Pipeline', Icons.video_library, 'python3 --version'],
+            ['Storage Check', Icons.storage, 'find . -maxdepth 3 -type d -name "uploads" -o -name "storage"'],
+            ['API Project Check', Icons.api, 'find . -maxdepth 3 -type f -name "package.json" -o -name "openapi.yaml" -o -name "schema.prisma"'],
+          ]),
+          _toolGroup('CONTENT ENGINE', Icons.video_library, [
+            ['Short Video Feed', Icons.smartphone, '__content_short__'],
+            ['Long Video Feed', Icons.ondemand_video, '__content_long__'],
+            ['Mixed Feed', Icons.video_library, '__content_mixed__'],
+            ['Content Studio', Icons.video_settings, '__content_studio__'],
+            ['Media Assets', Icons.perm_media, 'find . -maxdepth 4 -type f -name "*.mp4" -o -name "*.webm" -o -name "*.mov" -o -name "*.jpg" -o -name "*.png"'],
+          ]),
+          _toolGroup('GAME PRODUCTION', Icons.sports_esports, [
+            ['Game Project Check', Icons.rule, 'godot --headless --path . --editor --quit'],
+            ['Import Assets', Icons.inventory_2, 'godot --headless --path . --editor --quit --import'],
+            ['3D Asset Check', Icons.view_in_ar, 'blender --background --version'],
+            ['Game Test', Icons.play_circle, 'godot --headless --path . --quit'],
+          ]),
           _toolGroup('QUALITY + GIT', Icons.verified, [
             ['Git Status', Icons.account_tree, 'git status --short'],
             ['Git Diff', Icons.compare_arrows, 'git diff --stat'],
@@ -557,6 +623,19 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
 
   Widget _toolButton(String label, IconData icon, String command) => OutlinedButton.icon(
         onPressed: busy ? null : () {
+          if (command == '__content_studio__') {
+            _openContentStudio();
+            return;
+          }
+          if (command == '__content_short__' || command == '__content_long__' || command == '__content_mixed__') {
+            final kind = command == '__content_short__' ? 'short-video' : command == '__content_long__' ? 'long-video' : 'mixed-video';
+            request('POST', '/v1/content/feed-plan', data: {'kind': kind}).then((r) {
+              if (mounted) setState(() => status = 'Content feed ready: ${r['source']?['name'] ?? kind}');
+            }).catchError((e) {
+              if (mounted) setState(() => status = 'Content feed error: $e');
+            });
+            return;
+          }
           terminal.text = command == '__toolchain_check__' ? 'toolchain status' : command;
           runCommand();
         },
