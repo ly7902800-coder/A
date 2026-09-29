@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CloudFlutterIdePage extends StatefulWidget {
   const CloudFlutterIdePage({super.key});
-  @override ConsumerState<CloudFlutterIdePage> createState()=>_CloudFlutterIdePageState();
+  @override State<CloudFlutterIdePage> createState()=>_CloudFlutterIdePageState();
 }
 
 class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
