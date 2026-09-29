@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_monaco/flutter_monaco.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'dart:convert';
 
 class CloudFlutterIdePage extends StatefulWidget {
   const CloudFlutterIdePage({super.key});
@@ -29,6 +31,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   String? previewUrl;
   String? devtoolsUrl;
   WebViewController? devtoolsController;
+  WebSocketChannel? terminalSocket;
   String panel = 'editor';
   String target = 'apk';
   String status = 'Cloud Flutter workspace ready';
@@ -68,12 +71,46 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(),
       });
       await _loadTree();
+      await _connectTerminal();
       await _startDebug();
       setState(() => status = 'Cloud Flutter debug workspace is running');
     } catch (e) {
       setState(() => status = 'Workspace error: ' + e.toString());
     } finally {
       if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _connectTerminal() async {
+    try {
+      final r = await request('POST', '/v1/flutter/terminal-url', data: {
+        'sessionId': sessionId,
+        'repo': repo.text.trim(),
+        'branch': branch.text.trim(),
+      });
+      final url = r['url']?.toString();
+      if (url == null || url.isEmpty) return;
+      terminalSocket?.sink.close();
+      final socket = WebSocketChannel.connect(Uri.parse(url));
+      terminalSocket = socket;
+      socket.stream.listen((event) {
+        try {
+          final m = jsonDecode(event.toString()) as Map<String, dynamic>;
+          final data = m['data']?.toString() ?? m['message']?.toString() ?? '';
+          if (data.isNotEmpty && mounted) {
+            setState(() => status = data);
+          }
+          if (m['type'] == 'exit' && mounted) {
+            setState(() => status = 'Terminal process exited: ' + (m['code']?.toString() ?? '0'));
+          }
+        } catch (_) {}
+      }, onError: (e) {
+        if (mounted) setState(() => status = 'Live terminal error: ' + e.toString());
+      });
+      await socket.ready;
+      if (mounted) setState(() => status = 'Live terminal connected');
+    } catch (e) {
+      if (mounted) setState(() => status = 'Terminal connection error: ' + e.toString());
     }
   }
 
@@ -176,14 +213,19 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
       panel = 'terminal';
     });
     try {
-      final r = await request('POST', '/v1/flutter/worker/command', data: {
-        'sessionId': sessionId,
-        'repo': repo.text.trim(),
-        'branch': branch.text.trim(),
-        'command': c,
-      });
-      status = (r['stdout']?.toString() ?? '') + (r['stderr']?.toString() ?? '');
-      setState(() {});
+      if (terminalSocket != null) {
+        terminalSocket!.sink.add(jsonEncode({'type': 'exec', 'command': c}));
+        setState(() => status = 'Running: ' + c);
+      } else {
+        final r = await request('POST', '/v1/flutter/worker/command', data: {
+          'sessionId': sessionId,
+          'repo': repo.text.trim(),
+          'branch': branch.text.trim(),
+          'command': c,
+        });
+        status = (r['stdout']?.toString() ?? '') + (r['stderr']?.toString() ?? '');
+        setState(() {});
+      }
     } catch (e) {
       setState(() => status = 'Terminal error: ' + e.toString());
     } finally {
@@ -236,6 +278,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   @override
   void dispose() {
     timer?.cancel();
+    terminalSocket?.sink.close();
     repo.dispose();
     branch.dispose();
     base.dispose();
