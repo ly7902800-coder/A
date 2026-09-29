@@ -34,6 +34,8 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   WebSocketChannel? terminalSocket;
   String panel = 'editor';
   String target = 'apk';
+  List<Map<String, dynamic>> artifacts = [];
+  String? buildRunId;
   String status = 'Cloud Flutter workspace ready';
   late final String sessionId =
       'genesis-' + DateTime.now().millisecondsSinceEpoch.toString();
@@ -258,6 +260,21 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     }
   }
 
+  Future<void> loadArtifacts(String runId) async {
+    try {
+      final r = await request('GET', '/v1/flutter/build/artifacts', query: {
+        'repo': repo.text.trim(), 'runId': runId,
+      });
+      setState(() {
+        artifacts = (r['artifacts'] as List? ?? []).whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .where((e) => e['expired'] != true).toList();
+      });
+    } catch (e) {
+      if (mounted) setState(() => status = 'Artifact error: ' + e.toString());
+    }
+  }
+
   Future<void> pollBuild() async {
     try {
       final r = await request('GET', '/v1/flutter/build/status', query: {
@@ -265,8 +282,10 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         'branch': branch.text.trim(),
       });
       if (r['found'] != true) return;
+      buildRunId = r['runId']?.toString();
       if (r['status'] == 'completed') {
         timer?.cancel();
+        if (r['conclusion'] == 'success' && buildRunId != null) await loadArtifacts(buildRunId!);
         setState(() => status =
             'Build ' + (r['conclusion']?.toString() ?? 'completed'));
       } else {
@@ -280,7 +299,6 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   void dispose() {
     timer?.cancel();
     terminalSocket?.sink.close();
-    if (lspConnection != null) unawaited(lspConnection!.disconnect());
     repo.dispose();
     branch.dispose();
     base.dispose();
@@ -327,6 +345,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             _tool(Icons.refresh, 'Hot Reload', () => _debugAction('/v1/flutter/debug/hot-reload', 'Hot Reload')),
             _tool(Icons.restart_alt, 'Hot Restart', () => _debugAction('/v1/flutter/debug/hot-restart', 'Hot Restart')),
             _tool(Icons.build_outlined, 'Build', buildProject),
+            _tool(Icons.android, 'APK', () { setState(() => target = 'apk'); buildProject(); }),
             IconButton(
               tooltip: computerMode ? 'Mobile mode' : 'Computer mode',
               onPressed: () => setState(() => computerMode = !computerMode),
@@ -534,10 +553,31 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         ),
       );
 
+  Widget _artifactPanel() => Container(
+        color: const Color(0xFF17181C),
+        padding: const EdgeInsets.all(10),
+        child: Row(children: [
+          const Icon(Icons.android, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(
+            artifacts.isEmpty ? 'APK: بعد نجاح Build راح يظهر الـArtifact هنا' :
+              'APK جاهز: ' + artifacts.map((a) => a['name']?.toString() ?? 'artifact').join(', '),
+            style: const TextStyle(fontSize: 11),
+          )),
+          if (artifacts.isNotEmpty)
+            IconButton(
+              tooltip: 'فتح Artifact',
+              icon: const Icon(Icons.open_in_new, size: 18),
+              onPressed: () => setState(() => status = 'APK Artifact جاهز داخل GitHub Actions'),
+            ),
+        ]),
+      );
+
   Widget _preview() => Container(
         color: const Color(0xFF17181C),
         child: Column(children: [
           _sectionHeader('FLUTTER PREVIEW', Icons.phone_android),
+          _artifactPanel(),
           Expanded(
             child: Container(
               margin: const EdgeInsets.fromLTRB(26, 8, 26, 18),
