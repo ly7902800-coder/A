@@ -118,27 +118,28 @@ class _FlutterFeatureLabState extends State<FlutterFeatureLab>
         ),
         body: Directionality(
           textDirection: TextDirection.rtl,
-          child: Column(
-            children: [
-              TabBar(
-                controller: null,
-                tabs: const [
-                  Tab(text: 'Widgets'),
-                  Tab(text: 'Layout'),
-                  Tab(text: 'Device'),
-                ],
-              ),
-              Expanded(
-                child: IndexedStack(
-                  index: tab,
-                  children: [
-                    widgetsTab(),
-                    layoutTab(),
-                    deviceTab(),
+          child: DefaultTabController(
+            length: 3,
+            child: Column(
+              children: [
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'Widgets'),
+                    Tab(text: 'Layout'),
+                    Tab(text: 'Device'),
                   ],
                 ),
-              ),
-            ],
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      widgetsTab(),
+                      layoutTab(),
+                      deviceTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         bottomNavigationBar: NavigationBar(
