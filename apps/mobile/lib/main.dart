@@ -473,82 +473,50 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
           ),
           body: SafeArea(
             child: Column(
-            children: [
-              if (token.isEmpty)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              if (token.isEmpty) const SizedBox.shrink(),
-              if (token.isEmpty) const SizedBox.shrink(),
-              if (false)
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: email,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                        ),
-                      ),
-                      TextField(
-                        controller: password,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                        ),
-                      ),
-                      FilledButton(
-                        onPressed: loading ? null : login,
-                        child: const Text('Login'),
-                      ),
-                    ],
+              children: [
+                if (token.isEmpty)
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else ...[
+                  Expanded(
+                    child: ListView(
+                      children: messages
+                          .map(
+                            (m) => ListTile(
+                              title: Text(m['role'] == 'user' ? 'أنت' : 'Genesis AI'),
+                              subtitle: Text(m['content'] ?? ''),
+                            ),
+                          )
+                          .toList(),
+                    ),
                   ),
-                ),
-              Expanded(
-                child: ListView(
-                  children: messages
-                      .map(
-                        (m) => ListTile(
-                          title: Text(
-                            m['role'] == 'user'
-                                ? 'أنت'
-                                : 'Genesis AI',
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: input,
+                            enabled: !loading,
+                            onSubmitted: (_) => send(),
+                            decoration: const InputDecoration(
+                              hintText: 'اكتب طلبك...',
+                              border: OutlineInputBorder(),
+                            ),
                           ),
-                          subtitle: Text(m['content'] ?? ''),
                         ),
-                      )
-                      .toList(),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: input,
-                        enabled: token.isNotEmpty && !loading,
-                        decoration: const InputDecoration(
-                          hintText: 'اكتب طلبك...',
+                        IconButton(
+                          onPressed: loading ? null : send,
+                          icon: const Icon(Icons.send),
                         ),
-                      ),
+                      ],
                     ),
-                    IconButton(
-                      onPressed: loading ? null : send,
-                      icon: const Icon(Icons.send),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              ],
+            ),
           ),
-        );
-        },
-      ),
-    );
-  }
-
   @override
   void dispose() {
     input.dispose();
