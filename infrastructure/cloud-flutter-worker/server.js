@@ -266,9 +266,11 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === "/v1/workspace/command") {
       const allowed = new Set([
-        "flutter pub get", "flutter analyze", "flutter test",
-        "flutter build apk --release", "flutter build appbundle --release",
-        "flutter build web --release", "dart format .", "git status --short"
+        "flutter pub get", "flutter analyze", "flutter test", "flutter clean", "flutter doctor -v",
+        "flutter pub deps", "flutter pub outdated", "flutter create --platforms=web .",
+        "flutter build apk --release", "flutter build appbundle --release", "flutter build web --release",
+        "flutter run -d chrome --web-run-headless", "dart format .", "dart analyze", "dart fix --dry-run",
+        "git status --short", "git diff --stat"
       ]);
       if (!allowed.has(b.command)) return send(res, 400, { error: "command not allowed", allowed: [...allowed] });
       const r = await execCapture(b.command, cwd, 300000);
@@ -340,7 +342,7 @@ wss.on("connection", async (ws, req) => {
       try {
         const m = JSON.parse(String(raw));
         if (m.type === "exec") {
-          const allowed = new Set(["flutter pub get","flutter analyze","flutter test","dart format .","git status --short"]);
+          const allowed = new Set(["flutter pub get","flutter analyze","flutter test","flutter clean","flutter doctor -v","flutter pub deps","flutter pub outdated","flutter create --platforms=web .","flutter build apk --release","flutter build appbundle --release","flutter build web --release","flutter run -d chrome --web-run-headless","dart format .","dart analyze","dart fix --dry-run","git status --short","git diff --stat"]);
           if (!allowed.has(m.command)) return ws.send(JSON.stringify({ type: "error", message: "command not allowed" }));
           if (proc) proc.kill("SIGTERM");
           proc = spawn("bash", ["-lc", m.command], { cwd: projectRoot(s.dir), env: { ...process.env, TERM: "xterm-256color" }});
