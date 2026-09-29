@@ -17,6 +17,9 @@ cd apps/mobile
 flutter create --platforms=android,web --project-name genesis_ai --org com.genesisai .
 flutter pub get
 
+echo "Running Flutter code generation..."
+dart run build_runner build --delete-conflicting-outputs || true
+
 cd ../..
 chmod +x tool/cloud_ide.sh || true
 
