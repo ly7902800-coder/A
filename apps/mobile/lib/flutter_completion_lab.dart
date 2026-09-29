@@ -6,6 +6,7 @@ import 'package:camera/camera.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,19 +26,12 @@ final class FeatureDone extends FeatureState {
   const FeatureDone(this.message);
   final String message;
 }
-class FeatureCubit extends CubitLike<FeatureState> {
-  FeatureCubit():super(const FeatureIdle());
+class FeatureCubit extends Cubit<FeatureState> {
+  FeatureCubit() : super(const FeatureIdle());
   Future<void> run(Future<String> Function() task) async {
     emit(const FeatureBusy());
     try { emit(FeatureDone(await task())); } catch(e) { emit(FeatureDone('Error: $e')); }
   }
-}
-abstract class CubitLike<T> {
-  CubitLike(this.state);
-  T state;
-  final _listeners=<void Function(T)>[];
-  void emit(T value){ state=value; for(final f in _listeners){f(value);} }
-  void listen(void Function(T) f){_listeners.add(f);}
 }
 
 class FlutterCompletionLab extends ConsumerStatefulWidget {
