@@ -303,26 +303,47 @@ const server = http.createServer(async (req, res) => {
 });
 
 const wss = new WebSocketServer({ server, path: "/v1/terminal" });
-wss.on("connection", ws => {
+wss.on("connection", async (ws, req) => {
   let proc = null;
-  ws.on("message", async raw => {
-    try {
-      const m = JSON.parse(String(raw));
-      auth({ headers: { "x-worker-token": m.workerToken || "" } });
-      const s = await ensureSession(m.sessionId, m.repo, m.branch);
-      if (m.type === "exec") {
-        const allowed = new Set(["flutter pub get","flutter analyze","flutter test","dart format .","git status --short"]);
-        if (!allowed.has(m.command)) return ws.send(JSON.stringify({ type: "error", message: "command not allowed" }));
-        proc = spawn("bash", ["-lc", m.command], { cwd: projectRoot(s.dir), env: { ...process.env, TERM: "xterm-256color" }});
-        proc.stdout.on("data", x => ws.send(JSON.stringify({ type: "stdout", data: x.toString() })));
-        proc.stderr.on("data", x => ws.send(JSON.stringify({ type: "stderr", data: x.toString() })));
-        proc.on("close", code => ws.send(JSON.stringify({ type: "exit", code })));
-      }
-      if (m.type === "stop" && proc) proc.kill("SIGTERM");
-    } catch (e) {
-      ws.send(JSON.stringify({ type: "error", message: e instanceof Error ? e.message : String(e) }));
+  try {
+    const url = new URL(req.url || "/", "http://localhost");
+    const sessionId = safeId(url.searchParams.get("sessionId"));
+    const supplied = url.searchParams.get("access") || "";
+    const secret = process.env.WORKER_SHARED_SECRET || "";
+    const expected = crypto.createHmac("sha256", secret).update(sessionId).digest("hex");
+    if (!secret || supplied.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) {
+      ws.close(1008, "authentication failed");
+      return;
     }
-  });
+    const repo = url.searchParams.get("repo") || "";
+    const branch = url.searchParams.get("branch") || "";
+    if (!repo || !branch) {
+      ws.close(1008, "repo and branch are required");
+      return;
+    }
+    const s = await ensureSession(sessionId, repo, branch);
+    ws.send(JSON.stringify({ type: "ready", sessionId: s.id }));
+    ws.on("message", async raw => {
+      try {
+        const m = JSON.parse(String(raw));
+        if (m.type === "exec") {
+          const allowed = new Set(["flutter pub get","flutter analyze","flutter test","dart format .","git status --short"]);
+          if (!allowed.has(m.command)) return ws.send(JSON.stringify({ type: "error", message: "command not allowed" }));
+          if (proc) proc.kill("SIGTERM");
+          proc = spawn("bash", ["-lc", m.command], { cwd: projectRoot(s.dir), env: { ...process.env, TERM: "xterm-256color" }});
+          proc.stdout.on("data", x => ws.send(JSON.stringify({ type: "stdout", data: x.toString() })));
+          proc.stderr.on("data", x => ws.send(JSON.stringify({ type: "stderr", data: x.toString() })));
+          proc.on("close", code => { ws.send(JSON.stringify({ type: "exit", code })); proc = null; });
+        }
+        if (m.type === "stop" && proc) proc.kill("SIGTERM");
+      } catch (e) {
+        ws.send(JSON.stringify({ type: "error", message: e instanceof Error ? e.message : String(e) }));
+      }
+    });
+    ws.on("close", () => { if (proc) proc.kill("SIGTERM"); });
+  } catch (e) {
+    ws.close(1011, e instanceof Error ? e.message : String(e));
+  }
 });
 
 setInterval(async () => {
