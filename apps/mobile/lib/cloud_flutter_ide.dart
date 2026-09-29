@@ -2,17 +2,16 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CloudFlutterIdePage extends ConsumerStatefulWidget {
+class CloudFlutterIdePage extends StatefulWidget {
   const CloudFlutterIdePage({super.key});
   @override ConsumerState<CloudFlutterIdePage> createState()=>_CloudFlutterIdePageState();
 }
 
-class _CloudFlutterIdePageState extends ConsumerState<CloudFlutterIdePage> {
+class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   final repo=TextEditingController(text:'ly7902800-coder/A');
   final baseBranch=TextEditingController(text:'main');
   final branch=TextEditingController(text:'genesis-cloud-flutter');
@@ -24,18 +23,20 @@ class _CloudFlutterIdePageState extends ConsumerState<CloudFlutterIdePage> {
   String target='apk';
 
   String? get apiBase {
-    final value=ref.read(apiBaseUrlProvider);
+    const value=String.fromEnvironment('GENESIS_API_URL',defaultValue:'');
     return value.isEmpty?null:value;
   }
 
   Future<Map<String,dynamic>> request(String method,String endpoint,{Map<String,dynamic>? data,Map<String,String>? query}) async {
     final base=apiBase;
     if(base==null)throw Exception('GENESIS_API_URL غير مضبوط');
+    final prefs=await SharedPreferences.getInstance();
+    final token=prefs.getString('genesis_auth_token');
     final response=await dio.request<Map<String,dynamic>>(
       base+endpoint,
       data:data,
       queryParameters:query,
-      options:Options(method:method,headers:{'Content-Type':'application/json'}),
+      options:Options(method:method,headers:{'Content-Type':'application/json',if(token!=null&&token.isNotEmpty)'Authorization':'Bearer '+token}),
     );
     return response.data??<String,dynamic>{};
   }
