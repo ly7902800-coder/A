@@ -248,6 +248,7 @@ const server = http.createServer(async (req, res) => {
       await execCapture("flutter pub get", cwd, 240000);
       return send(res, 200, { ok: true, sessionId: s.id, status: "ready" });
     }
+    if (url.pathname === "/v1/workspace/heartbeat") { const s = sessions.get(safeId(String(b.sessionId || ""))); if (!s) return send(res, 404, { error: "session not found" }); s.lastHeartbeat = Date.now(); return send(res, 200, { ok: true, sessionId: s.id, lastHeartbeat: s.lastHeartbeat }); }
     if (url.pathname === "/v1/workspace/tree") {
       return send(res, 200, { entries: await tree(cwd, String(b.path || "")) });
     }
@@ -270,7 +271,7 @@ const server = http.createServer(async (req, res) => {
         "flutter pub deps", "flutter pub outdated", "flutter create --platforms=web .",
         "flutter build apk --release", "flutter build appbundle --release", "flutter build web --release",
         "flutter run -d chrome --web-run-headless", "dart format .", "dart analyze", "dart fix --dry-run",
-        "git status --short", "git diff --stat"
+        "git status --short", "git diff --stat", "flutter devices", "flutter logs", "flutter screenshot", "flutter gen-l10n", "flutter attach", "flutter drive", "flutter test --coverage", "flutter test integration_test", "flutter precache", "flutter config --list"
       ]);
       if (!allowed.has(b.command)) return send(res, 400, { error: "command not allowed", allowed: [...allowed] });
       const r = await execCapture(b.command, cwd, 300000);
@@ -342,7 +343,7 @@ wss.on("connection", async (ws, req) => {
       try {
         const m = JSON.parse(String(raw));
         if (m.type === "exec") {
-          const allowed = new Set(["flutter pub get","flutter analyze","flutter test","flutter clean","flutter doctor -v","flutter pub deps","flutter pub outdated","flutter create --platforms=web .","flutter build apk --release","flutter build appbundle --release","flutter build web --release","flutter run -d chrome --web-run-headless","dart format .","dart analyze","dart fix --dry-run","git status --short","git diff --stat"]);
+          const allowed = new Set(["flutter pub get","flutter analyze","flutter test","flutter clean","flutter doctor -v","flutter pub deps","flutter pub outdated","flutter create --platforms=web .","flutter build apk --release","flutter build appbundle --release","flutter build web --release","flutter run -d chrome --web-run-headless","dart format .","dart analyze","dart fix --dry-run","git status --short","git diff --stat","flutter devices","flutter logs","flutter screenshot","flutter gen-l10n","flutter attach","flutter drive","flutter test --coverage","flutter test integration_test","flutter precache","flutter config --list"]);
           if (!allowed.has(m.command)) return ws.send(JSON.stringify({ type: "error", message: "command not allowed" }));
           if (proc) proc.kill("SIGTERM");
           proc = spawn("bash", ["-lc", m.command], { cwd: projectRoot(s.dir), env: { ...process.env, TERM: "xterm-256color" }});
