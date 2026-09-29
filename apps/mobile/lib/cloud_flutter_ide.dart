@@ -447,38 +447,126 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
         _mobileNavigation(),
       ]);
 
-  Widget _flutterTools() => Container(color: const Color(0xFF111216), padding: const EdgeInsets.all(12), child: ListView(children: [const Text('FLUTTER TOOLS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Wrap(spacing: 8, runSpacing: 8, children: [
-  _toolButton('Create Web', Icons.language, 'flutter create --platforms=web .'),
-  _toolButton('Pub Get', Icons.download, 'flutter pub get'),
-  _toolButton('Analyze', Icons.rule, 'flutter analyze'),
-  _toolButton('Test', Icons.science, 'flutter test'),
-  _toolButton('Format', Icons.format_align_left, 'dart format .'),
-  _toolButton('Dart Fix', Icons.auto_fix_high, 'dart fix --dry-run'),
-  _toolButton('Clean', Icons.cleaning_services, 'flutter clean'),
-  _toolButton('Doctor', Icons.health_and_safety, 'flutter doctor -v'),
-  _toolButton('Packages', Icons.extension, 'flutter pub deps'),
-  _toolButton('Outdated', Icons.update, 'flutter pub outdated'),
-  _toolButton('Devices', Icons.devices, 'flutter devices'),
-  _toolButton('Logs', Icons.article, 'flutter logs'),
-  _toolButton('Screenshot', Icons.photo_camera, 'flutter screenshot'),
-  _toolButton('Generate l10n', Icons.translate, 'flutter gen-l10n'),
-  _toolButton('Precache', Icons.cached, 'flutter precache'),
-  _toolButton('Config', Icons.settings, 'flutter config --list'),
-  _toolButton('Build APK', Icons.android, 'flutter build apk --release'),
-  _toolButton('Build AAB', Icons.inventory_2, 'flutter build appbundle --release'),
-  _toolButton('Build Web', Icons.web, 'flutter build web --release'),
-  _toolButton('Run Chrome', Icons.play_arrow, 'flutter run -d chrome --web-run-headless'),
-  _toolButton('Test Coverage', Icons.analytics, 'flutter test --coverage'),
-  _toolButton('Integration Test', Icons.integration_instructions, 'flutter test integration_test'),
-  _toolButton('Drive', Icons.drive_eta, 'flutter drive'),
-  _toolButton('Dart Analyze', Icons.code, 'dart analyze'),
-  _toolButton('Git Status', Icons.account_tree, 'git status --short'),
-  _toolButton('Git Diff', Icons.compare_arrows, 'git diff --stat')
-]), const SizedBox(height: 18), const Text('PROJECT TARGET', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), const SizedBox(height: 10), Row(children: [Expanded(child: _targetButton('APK', 'apk', Icons.android)), const SizedBox(width: 8), Expanded(child: _targetButton('AAB', 'aab', Icons.inventory_2)), const SizedBox(width: 8), Expanded(child: _targetButton('WEB', 'web', Icons.web))]), const SizedBox(height: 14), Text('Target: ' + target.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF9EA3AE))) ]));
 
-  Widget _toolButton(String label, IconData icon, String command) => OutlinedButton.icon(onPressed: busy ? null : () { terminal.text = command; runCommand(); }, icon: Icon(icon, size: 16), label: Text(label, style: const TextStyle(fontSize: 11)));
+  Widget _flutterTools() => Container(
+        color: const Color(0xFF111216),
+        padding: const EdgeInsets.all(12),
+        child: ListView(children: [
+          _toolGroup('FLUTTER CLI', Icons.flutter_dash, [
+            ['Version', Icons.info_outline, 'flutter --version'],
+            ['Help', Icons.help_outline, 'flutter --help --verbose'],
+            ['Create Web', Icons.language, 'flutter create --platforms=web .'],
+            ['Analyze', Icons.rule, 'flutter analyze'],
+            ['Test', Icons.science, 'flutter test'],
+            ['Format', Icons.format_align_left, 'dart format .'],
+            ['Dart Fix', Icons.auto_fix_high, 'dart fix --dry-run'],
+            ['Clean', Icons.cleaning_services, 'flutter clean'],
+            ['Doctor', Icons.health_and_safety, 'flutter doctor -v'],
+            ['Packages', Icons.extension, 'flutter pub deps'],
+            ['Pub Get', Icons.download, 'flutter pub get'],
+            ['Pub Upgrade', Icons.upgrade, 'flutter pub upgrade'],
+            ['Outdated', Icons.update, 'flutter pub outdated'],
+            ['Devices', Icons.devices, 'flutter devices'],
+            ['Emulators', Icons.smartphone, 'flutter emulators'],
+            ['Custom Devices', Icons.settings_input_component, 'flutter custom-devices list'],
+            ['Logs', Icons.article, 'flutter logs'],
+            ['Screenshot', Icons.photo_camera, 'flutter screenshot'],
+            ['Generate l10n', Icons.translate, 'flutter gen-l10n'],
+            ['Precache', Icons.cached, 'flutter precache'],
+            ['Config', Icons.settings, 'flutter config --list'],
+            ['Channel', Icons.alt_route, 'flutter channel'],
+            ['Build APK', Icons.android, 'flutter build apk --release'],
+            ['Build AAB', Icons.inventory_2, 'flutter build appbundle --release'],
+            ['Build Web', Icons.web, 'flutter build web --release'],
+            ['Run Chrome', Icons.play_arrow, 'flutter run -d chrome --web-run-headless'],
+            ['Attach', Icons.link, 'flutter attach'],
+            ['Drive', Icons.drive_eta, 'flutter drive'],
+            ['Install', Icons.install_mobile, 'flutter install'],
+            ['Integration Test', Icons.integration_instructions, 'flutter test integration_test'],
+            ['Coverage', Icons.analytics, 'flutter test --coverage'],
+            ['Assemble', Icons.build_circle, 'flutter assemble'],
+            ['Symbolize', Icons.bug_report, 'flutter symbolize --help'],
+          ]),
+          _toolGroup('DART TOOLCHAIN', Icons.code, [
+            ['Dart Version', Icons.info, 'dart --version'],
+            ['Dart Analyze', Icons.rule, 'dart analyze'],
+            ['Dart Format', Icons.format_align_left, 'dart format .'],
+            ['Dart Fix', Icons.auto_fix_high, 'dart fix --dry-run'],
+            ['Dart Test', Icons.science, 'dart test'],
+            ['Dart Pub Get', Icons.download, 'dart pub get'],
+            ['Dart Pub Outdated', Icons.update, 'dart pub outdated'],
+            ['Dart Compile', Icons.memory, 'dart compile exe --help'],
+            ['DevTools', Icons.speed, 'dart devtools'],
+          ]),
+          _toolGroup('3D STUDIO', Icons.view_in_ar, [
+            ['Check 3D Toolchain', Icons.health_and_safety, '__toolchain_check__'],
+            ['Blender Version', Icons.view_in_ar, 'blender --version'],
+            ['Blender Headless', Icons.auto_awesome, 'blender --background --version'],
+            ['Python 3D', Icons.code, 'python3 --version'],
+            ['List 3D Assets', Icons.folder_special, 'find . -maxdepth 4 -type f -name "*.glb" -o -name "*.gltf" -o -name "*.obj" -o -name "*.fbx"'],
+          ]),
+          _toolGroup('GAME ENGINE LAB', Icons.sports_esports, [
+            ['Engine Status', Icons.health_and_safety, '__toolchain_check__'],
+            ['Godot Version', Icons.sports_esports, 'godot --version'],
+            ['Godot Headless Check', Icons.terminal, 'godot --headless --editor --quit'],
+            ['Godot Project Check', Icons.rule, 'godot --headless --path . --editor --quit'],
+            ['Game Assets', Icons.folder_copy, 'find . -maxdepth 4 -type f -name "*.tscn" -o -name "*.godot" -o -name "*.glb" -o -name "*.gltf"'],
+          ]),
+          _toolGroup('QUALITY + GIT', Icons.verified, [
+            ['Git Status', Icons.account_tree, 'git status --short'],
+            ['Git Diff', Icons.compare_arrows, 'git diff --stat'],
+            ['Git Branches', Icons.call_split, 'git branch --all'],
+            ['Git Log', Icons.history, 'git log -10 --oneline'],
+            ['Flutter Doctor', Icons.health_and_safety, 'flutter doctor -v'],
+          ]),
+          const SizedBox(height: 14),
+          const Text('PROJECT TARGET', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: _targetButton('APK', 'apk', Icons.android)),
+            const SizedBox(width: 8),
+            Expanded(child: _targetButton('AAB', 'aab', Icons.inventory_2)),
+            const SizedBox(width: 8),
+            Expanded(child: _targetButton('WEB', 'web', Icons.web))
+          ]),
+          const SizedBox(height: 14),
+          Text('Target: ' + target.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF9EA3AE)))
+        ]));
 
-  Widget _targetButton(String label, String value, IconData icon) => ElevatedButton.icon(onPressed: busy ? null : () => setState(() => target = value), icon: Icon(icon, size: 15), label: Text(label, style: const TextStyle(fontSize: 10)));
+  Widget _toolGroup(String title, IconData icon, List<List<dynamic>> tools) =>
+      Card(
+        color: const Color(0xFF181A1F),
+        margin: const EdgeInsets.only(bottom: 10),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(icon, size: 17),
+              const SizedBox(width: 7),
+              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            ]),
+            const SizedBox(height: 9),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: tools.map((t) => _toolButton(t[0] as String, t[1] as IconData, t[2] as String)).toList(),
+            ),
+          ]),
+        ),
+      );
+
+  Widget _toolButton(String label, IconData icon, String command) => OutlinedButton.icon(
+        onPressed: busy ? null : () {
+          terminal.text = command == '__toolchain_check__' ? 'toolchain status' : command;
+          runCommand();
+        },
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 11)));
+
+  Widget _targetButton(String label, String value, IconData icon) => ElevatedButton.icon(
+        onPressed: busy ? null : () => setState(() => target = value),
+        icon: Icon(icon, size: 15),
+        label: Text(label, style: const TextStyle(fontSize: 10)));
 
   Widget _explorer() => Container(
         color: const Color(0xFF17181C),
