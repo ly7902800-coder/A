@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'flutter_feature_lab.dart';
+import 'flutter_buttons_lab.dart';
 import 'package:http/http.dart' as http;
 
 // -----------------------------------------------------------------------------
@@ -57,6 +58,10 @@ final router = GoRouter(
     GoRoute(
       path: '/flutter-lab',
       builder: (context, state) => const FlutterFeatureLab(),
+    ),
+    GoRoute(
+      path: '/buttons-lab',
+      builder: (context, state) => const ButtonsPage(),
     ),
   ],
 );
@@ -299,11 +304,8 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                 const UserAccountsDrawerHeader(
                   accountName: Text('Genesis AI'),
                   accountEmail: Text('Cloud AI Assistant'),
-                  currentAccountPicture: CircleAvatar(child: Icon(Icons.auto_awesome)),
-                ),
-                  child: Text(
-                    'Genesis AI',
-                    style: TextStyle(fontSize: 28),
+                  currentAccountPicture: CircleAvatar(
+                    child: Icon(Icons.auto_awesome),
                   ),
                 ),
                 ListTile(
@@ -311,6 +313,12 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   title: const Text('Flutter Feature Lab'),
                   subtitle: const Text('Widgets, layout, animation and device APIs'),
                   onTap: () => context.go('/flutter-lab'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.smart_button),
+                  title: const Text('Buttons Lab'),
+                  subtitle: const Text('أزرار وتفاعلات Flutter'),
+                  onTap: () => context.go('/buttons-lab'),
                 ),
                 const Divider(),
                 for (final item in [
