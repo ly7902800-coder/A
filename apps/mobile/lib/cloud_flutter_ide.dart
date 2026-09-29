@@ -115,22 +115,6 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   }
 
 
-  Future<void> _attachLsp(MonacoController controller) async {
-    monacoController = controller;
-    final url = lspUrl;
-    if (url == null || url.isEmpty) return;
-    try {
-      await lspConnection?.disconnect();
-      lspConnection = await controller.connectLanguageServer(
-        id: 'dart',
-        transport: LspWebSocketTransport(url: Uri.parse(url)),
-      );
-      if (mounted) setState(() => status = 'Dart IntelliSense connected');
-    } catch (e) {
-      if (mounted) setState(() => status = 'Dart IntelliSense error: ' + e.toString());
-    }
-  }
-
   Future<void> _startDebug() async {
     final r = await request('POST', '/v1/flutter/debug/start', data: {
       'sessionId': sessionId, 'repo': repo.text.trim(), 'branch': branch.text.trim(),
