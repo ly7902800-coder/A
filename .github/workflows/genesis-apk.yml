@@ -79,6 +79,35 @@ jobs:
           )
           PY
 
+          manifest.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Configure Android permissions and deep links
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text(encoding="utf-8")
+          permissions = """
+          <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.CAMERA" />
+          <uses-permission android:name="android.permission.RECORD_AUDIO" />
+          <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+          <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          """
+          marker = "<application"
+          if "android.permission.CAMERA" not in text:
+              text = text.replace(marker, permissions + "\n    " + marker, 1)
+          if "genesis://chat" not in text:
+              activity = '<intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="genesis" android:host="chat" />\n              </intent-filter>'
+              text = text.replace("</activity>", activity + "\n            </activity>", 1)
+          manifest.write_text(text, encoding="utf-8")
+          PY
+
       - name: Dependencies
         working-directory: apps/mobile
         run: flutter pub get
