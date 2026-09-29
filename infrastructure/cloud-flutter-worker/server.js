@@ -266,12 +266,27 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ok: true, path: file, synced: b.sync !== false });
     }
     if (url.pathname === "/v1/workspace/command") {
+      if (b.command === "toolchain status") {
+        const checks = await Promise.all(["flutter","dart","blender","godot","python3","git"].map(async name => {
+          const r = await execCapture("command -v " + name, cwd, 10000);
+          return { name, available: r.code === 0, path: r.code === 0 ? r.stdout.trim() : null };
+        }));
+        return send(res, 200, { ok: true, toolchain: checks });
+      }
       const allowed = new Set([
-        "flutter pub get", "flutter analyze", "flutter test", "flutter clean", "flutter doctor -v",
+        "flutter --version", "flutter --help --verbose", "flutter pub get", "flutter pub upgrade",
+        "flutter analyze", "flutter test", "flutter clean", "flutter doctor -v",
         "flutter pub deps", "flutter pub outdated", "flutter create --platforms=web .",
         "flutter build apk --release", "flutter build appbundle --release", "flutter build web --release",
-        "flutter run -d chrome --web-run-headless", "dart format .", "dart analyze", "dart fix --dry-run",
-        "git status --short", "git diff --stat", "flutter devices", "flutter logs", "flutter screenshot", "flutter gen-l10n", "flutter attach", "flutter drive", "flutter test --coverage", "flutter test integration_test", "flutter precache", "flutter config --list"
+        "flutter run -d chrome --web-run-headless", "flutter install", "flutter attach", "flutter drive",
+        "flutter test --coverage", "flutter test integration_test", "flutter precache",
+        "flutter config --list", "flutter channel", "flutter devices", "flutter emulators",
+        "flutter custom-devices list", "flutter logs", "flutter screenshot", "flutter gen-l10n",
+        "flutter assemble", "flutter symbolize --help",
+        "dart --version", "dart analyze", "dart format .", "dart fix --dry-run", "dart test",
+        "dart pub get", "dart pub outdated", "dart compile exe --help", "dart devtools",
+        "blender --version", "blender --background --version", "python3 --version",
+        "git status --short", "git diff --stat", "git branch --all", "git log -10 --oneline"
       ]);
       if (!allowed.has(b.command)) return send(res, 400, { error: "command not allowed", allowed: [...allowed] });
       const r = await execCapture(b.command, cwd, 300000);
