@@ -22,6 +22,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   final terminal = TextEditingController();
   final dio = Dio();
   Timer? timer;
+  Timer? heartbeatTimer;
   bool busy = false;
   bool computerMode = true;
   int editorVersion = 0;
@@ -76,6 +77,8 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
       });
       await _loadTree();
       await _connectTerminal();
+      heartbeatTimer?.cancel();
+      heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) => _heartbeat());
             await _startDebug();
       setState(() => status = 'Cloud Flutter debug workspace is running');
     } catch (e) {
@@ -83,6 +86,16 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  Future<void> _heartbeat() async {
+    try {
+      await request('POST', '/v1/flutter/workspace/heartbeat', data: {
+        'sessionId': sessionId,
+        'repo': repo.text.trim(),
+        'branch': branch.text.trim(),
+      });
+    } catch (_) {}
   }
 
   Future<void> _connectTerminal() async {
@@ -300,6 +313,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   @override
   void dispose() {
     timer?.cancel();
+    heartbeatTimer?.cancel();
     terminalSocket?.sink.close();
     repo.dispose();
     branch.dispose();
@@ -415,15 +429,24 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   _toolButton('Analyze', Icons.rule, 'flutter analyze'),
   _toolButton('Test', Icons.science, 'flutter test'),
   _toolButton('Format', Icons.format_align_left, 'dart format .'),
-  _toolButton('Fix', Icons.auto_fix_high, 'dart fix --dry-run'),
+  _toolButton('Dart Fix', Icons.auto_fix_high, 'dart fix --dry-run'),
   _toolButton('Clean', Icons.cleaning_services, 'flutter clean'),
   _toolButton('Doctor', Icons.health_and_safety, 'flutter doctor -v'),
   _toolButton('Packages', Icons.extension, 'flutter pub deps'),
   _toolButton('Outdated', Icons.update, 'flutter pub outdated'),
+  _toolButton('Devices', Icons.devices, 'flutter devices'),
+  _toolButton('Logs', Icons.article, 'flutter logs'),
+  _toolButton('Screenshot', Icons.photo_camera, 'flutter screenshot'),
+  _toolButton('Generate l10n', Icons.translate, 'flutter gen-l10n'),
+  _toolButton('Precache', Icons.cached, 'flutter precache'),
+  _toolButton('Config', Icons.settings, 'flutter config --list'),
   _toolButton('Build APK', Icons.android, 'flutter build apk --release'),
   _toolButton('Build AAB', Icons.inventory_2, 'flutter build appbundle --release'),
   _toolButton('Build Web', Icons.web, 'flutter build web --release'),
   _toolButton('Run Chrome', Icons.play_arrow, 'flutter run -d chrome --web-run-headless'),
+  _toolButton('Test Coverage', Icons.analytics, 'flutter test --coverage'),
+  _toolButton('Integration Test', Icons.integration_instructions, 'flutter test integration_test'),
+  _toolButton('Drive', Icons.drive_eta, 'flutter drive'),
   _toolButton('Dart Analyze', Icons.code, 'dart analyze'),
   _toolButton('Git Status', Icons.account_tree, 'git status --short'),
   _toolButton('Git Diff', Icons.compare_arrows, 'git diff --stat')
