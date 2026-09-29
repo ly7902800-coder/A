@@ -313,8 +313,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
   void dispose() {
     timer?.cancel();
     terminalSocket?.sink.close();
-    lspConnection?.disconnect();
-    monacoController?.dispose();
+    unawaited(lspConnection?.disconnect());
     repo.dispose();
     branch.dispose();
     base.dispose();
