@@ -22,47 +22,107 @@ jobs:
           flutter-version: '3.47.0'
           channel: stable
           cache: true
+
       - name: Generate Android and Web platforms
         run: flutter create --platforms=android,web --project-name genesis_ai --org com.genesisai .
-      - name: Configure Android desugaring
+
+      - name: Configure Android app identity and desugaring
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path("android/app/build.gradle.kts")
-          s=p.read_text()
-          if "isCoreLibraryDesugaringEnabled" not in s:
-              s=s.replace("android {", "android {\n    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }", 1)
+          import re
+
+          gradle = Path("android/app/build.gradle.kts")
+          s = gradle.read_text()
+
+          if "isCoreLibraryDesugaringEnabled = true" not in s:
+              s = s.replace(
+                  "android {",
+                  """android {
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+    }""",
+                  1,
+              )
+
+          dependency = '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")'
           if "coreLibraryDesugaring(" not in s:
-              s=s.replace("dependencies {", "dependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.5\")", 1)
-          p.write_text(s)
+              if "dependencies {" in s:
+                  s = s.replace("dependencies {", "dependencies {\n" + dependency, 1)
+              else:
+                  s += "\n\ndependencies {\n" + dependency + "\n}\n"
+
+          gradle.write_text(s)
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          ms = manifest.read_text()
+          ms = re.sub(r'android:label="[^"]*"', 'android:label="Genesis AI"', ms, count=1)
+          ms = re.sub(r'android:icon="[^"]*"', 'android:icon="@drawable/genesis_icon"', ms, count=1)
+          if 'android:label="Genesis AI"' not in ms:
+              ms = ms.replace("<application", '<application android:label="Genesis AI" android:icon="@drawable/genesis_icon"', 1)
+          elif 'android:icon="@drawable/genesis_icon"' not in ms:
+              ms = ms.replace("<application", '<application android:icon="@drawable/genesis_icon"', 1)
+          manifest.write_text(ms)
+
+          icon = Path("android/app/src/main/res/drawable/genesis_icon.xml")
+          icon.parent.mkdir(parents=True, exist_ok=True)
+          icon.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#050B18" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#42A5F5" android:pathData="M54,12 L91,35 L75,70 L54,96 L33,70 L17,35 Z"/>
+    <path android:fillColor="#0D47A1" android:pathData="M54,12 L91,35 L54,54 L17,35 Z"/>
+    <path android:fillColor="#90CAF9" android:pathData="M54,54 L75,70 L54,96 L33,70 Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M54,29 L70,39 L54,49 L38,39 Z"/>
+    <path android:fillColor="#1565C0" android:pathData="M54,49 L70,39 L70,57 L54,68 Z"/>
+    <path android:fillColor="#64B5F6" android:pathData="M54,49 L38,39 L38,57 L54,68 Z"/>
+  </vector>
+  """)
+
+          print("Genesis AI Android identity configured.")
           PY
+
       - name: Get dependencies
         run: flutter pub get
+
       - name: Analyze
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
+
       - name: Test
         run: flutter test
+
       - name: Build Web
         run: flutter build web --release
+
       - name: Build APK
         run: flutter build apk --release
+
       - name: Build AAB
         run: flutter build appbundle --release
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: genesis-apk-full-${{ github.run_number }}
           path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: genesis-aab-full-${{ github.run_number }}
           path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
       - name: Upload Web
         uses: actions/upload-artifact@v4
         with:
           name: genesis-web-full-${{ github.run_number }}
           path: apps/mobile/build/web
+          if-no-files-found: error
+
       - name: Publish GitHub release assets
         if: github.ref == 'refs/heads/main'
         env:
