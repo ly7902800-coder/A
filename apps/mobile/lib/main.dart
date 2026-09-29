@@ -140,6 +140,55 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
   String conversationId = '';
   int _tabIndex = 0;
   List<dynamic> models = [];
+  List<dynamic> chats = [];
+  String chatSearch = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSession();
+  }
+
+  Future<void> _restoreSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('genesis_auth_token');
+      if (saved != null && saved.isNotEmpty) {
+        setState(() => token = saved);
+        await api('/v1/auth/me');
+      } else {
+        final data = await api('/v1/auth/guest', method: 'POST');
+        final newToken = data['token']?.toString() ?? '';
+        if (newToken.isEmpty) throw Exception('Guest session was not created');
+        await prefs.setString('genesis_auth_token', newToken);
+        setState(() => token = newToken);
+      }
+      await Future.wait([loadModels(), loadChats()]);
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('genesis_auth_token');
+      try {
+        final data = await api('/v1/auth/guest', method: 'POST');
+        final newToken = data['token']?.toString() ?? '';
+        if (newToken.isNotEmpty) {
+          await prefs.setString('genesis_auth_token', newToken);
+          if (mounted) setState(() => token = newToken);
+          await Future.wait([loadModels(), loadChats()]);
+        }
+      } catch (fallbackError) {
+        if (mounted) _snack(fallbackError.toString());
+      }
+    }
+  }
+
+  Future<void> loadChats() async {
+    if (token.isEmpty) return;
+    try {
+      final data = await api('/v1/chats');
+      setState(() => chats = data['chats'] ?? []);
+    } catch (_) {}
+  }
+
 
   Dio get _dio => Dio(
         BaseOptions(
@@ -368,6 +417,38 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   onTap: () => context.go('/cloud-flutter'),
                 ),
                 const Divider(),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'بحث بالمحادثات',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) => setState(() => chatSearch = value.trim().toLowerCase()),
+                  ),
+                ),
+                for (final chat in chats.where((c) => chatSearch.isEmpty || c['title']?.toString().toLowerCase().contains(chatSearch) == true))
+                  ListTile(
+                    leading: const Icon(Icons.chat_bubble_outline),
+                    title: Text(chat['title']?.toString() ?? 'محادثة'),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      try {
+                        final data = await api('/v1/chats/${chat['id']}');
+                        final loaded = (data['messages'] as List<dynamic>? ?? []);
+                        setState(() {
+                          conversationId = chat['id']?.toString() ?? '';
+                          messages
+                            ..clear()
+                            ..addAll(loaded.map((m) => <String, String>{
+                              'role': m['role']?.toString() ?? 'assistant',
+                              'content': m['content']?.toString() ?? '',
+                            }));
+                        });
+                      } catch (e) { _snack(e.toString()); }
+                    },
+                  ),
+                const Divider(),
                 for (final item in [
                   'Chat',
                   'Projects',
@@ -394,6 +475,12 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
             child: Column(
             children: [
               if (token.isEmpty)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              if (token.isEmpty) const SizedBox.shrink(),
+              if (token.isEmpty) const SizedBox.shrink(),
+              if (false)
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
