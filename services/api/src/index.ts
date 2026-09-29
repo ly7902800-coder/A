@@ -11,6 +11,20 @@ import { buildWorkerCapabilities, createBuildJob, getBuildJob } from "./build-wo
 const oauthProjects = new Map<string,{projectId:string;platform:"github"|"cloudflare"|"figma"|"google"|"google-cloud";userId:string}>();
 const port=Number(process.env.PORT??8080);
 const gateway=createAiGateway();
+const TOOL_INTEGRATIONS: Array<{id:string;name:string;category:string;status:string}> = [
+  {id:"antigravity",name:"Antigravity",category:"AI Coding",status:"available"},
+  {id:"vscode",name:"VS Code",category:"IDE",status:"available"},
+  {id:"cursor",name:"Cursor",category:"AI Coding",status:"available"},
+  {id:"github-copilot",name:"GitHub Copilot",category:"AI Coding",status:"available"},
+  {id:"vo",name:"VO",category:"AI Development",status:"available"},
+  {id:"figma",name:"Figma",category:"Design",status:"available"},
+  {id:"perplexity",name:"Perplexity",category:"Search",status:"available"},
+  {id:"bruno",name:"Bruno",category:"API Testing",status:"available"},
+  {id:"vercel",name:"Vercel",category:"Deployment",status:"available"},
+  {id:"heroku",name:"Heroku",category:"Deployment",status:"available"},
+  {id:"seo",name:"SEO",category:"Web",status:"available"},
+];
+
 function sendJson(response:ServerResponse,status:number,data:unknown){response.statusCode=status;response.setHeader("Content-Type","application/json; charset=utf-8");response.end(JSON.stringify(data));}
 async function requireAuth(request:IncomingMessage){ const user=await authenticateToken(bearer(request.headers.authorization)); if(!user) throw Object.assign(new Error("Authentication required"),{statusCode:401}); return user; }
 
