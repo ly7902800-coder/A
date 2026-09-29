@@ -79,8 +79,6 @@ jobs:
           )
           PY
 
-          manifest.write_text(text, encoding="utf-8")
-          PY
 
       - name: Configure Android permissions and deep links
         working-directory: apps/mobile
