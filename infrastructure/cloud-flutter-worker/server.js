@@ -220,6 +220,8 @@ const server = http.createServer(async (req, res) => {
     const cwd = projectRoot(s.dir);
 
     if (url.pathname === "/v1/workspace/start") {
+      const webConfig = await fs.access(path.join(cwd, "web")).then(() => true).catch(() => false);
+      if (!webConfig) { const scaffold = await execCapture("flutter create --platforms=web --project-name genesis_cloud .", cwd, 240000); if (scaffold.code) throw new Error(scaffold.stderr || "Flutter web scaffold failed"); }
       await execCapture("flutter pub get", cwd, 240000);
       return send(res, 200, { ok: true, sessionId: s.id, status: "ready" });
     }
