@@ -1,0 +1,63 @@
+name: Genesis Full Release Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  flutter-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          channel: stable
+          cache: true
+      - name: Generate Android and Web platforms
+        run: flutter create --platforms=android,web --project-name genesis_ai --org com.genesisai .
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Build Web
+        run: flutter build web --release
+      - name: Build APK
+        run: flutter build apk --release
+      - name: Build AAB
+        run: flutter build appbundle --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: genesis-apk-full-${{ github.run_number }}
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: genesis-aab-full-${{ github.run_number }}
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+      - name: Upload Web
+        uses: actions/upload-artifact@v4
+        with:
+          name: genesis-web-full-${{ github.run_number }}
+          path: apps/mobile/build/web
+      - name: Publish GitHub release assets
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "genesis-full-${{ github.run_number }}" \
+            build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/bundle/release/app-release.aab \
+            --title "Genesis AI Full Build ${{ github.run_number }}" \
+            --notes "APK and AAB built and tested by Genesis Full Release Test from ${{ github.sha }}."
