@@ -427,7 +427,7 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
             wordWrap: MonacoWordWrap.off,
           ),
           showStatusBar: true,
-          onChanged: (value) => code.text = value,
+          onContentChanged: (value) => code.text = value,
         ),
       );
 
