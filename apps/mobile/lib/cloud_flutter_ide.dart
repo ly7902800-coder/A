@@ -88,6 +88,28 @@ class _CloudFlutterIdePageState extends State<CloudFlutterIdePage> {
     }
   }
 
+  Future<void> _openIntegrations() async {
+    try {
+      final data = await request('GET', '/v1/integrations');
+      if (!mounted) return;
+      final items = (data['integrations'] as List? ?? []);
+      showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => SafeArea(
+        child: ListView(padding: const EdgeInsets.all(16), children: [
+          const Text('Genesis Integrations', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...items.map((item) => Card(child: ListTile(
+            leading: const Icon(Icons.extension),
+            title: Text(item['name'].toString()),
+            subtitle: Text('${item['category']} • ${item['status']}'),
+            trailing: FilledButton(onPressed: () async {
+              try { await request('POST', '/v1/integrations/${item['id']}/connect'); if (mounted) Navigator.pop(context); } catch (_) {}
+            }, child: const Text('Connect')),
+          ))),
+        ]),
+      ));
+    } catch (e) { if (mounted) _snack(e.toString()); }
+  }
+
   Future<void> _heartbeat() async {
     try {
       await request('POST', '/v1/flutter/workspace/heartbeat', data: {
