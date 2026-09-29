@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import 'flutter_feature_lab.dart';
 import 'flutter_buttons_lab.dart';
+import 'flutter_inputs_lab.dart';
 import 'package:http/http.dart' as http;
 
 // -----------------------------------------------------------------------------
@@ -62,6 +63,10 @@ final router = GoRouter(
     GoRoute(
       path: '/buttons-lab',
       builder: (context, state) => const ButtonsPage(),
+    ),
+    GoRoute(
+      path: '/inputs-lab',
+      builder: (context, state) => const InputsPage(),
     ),
   ],
 );
@@ -319,6 +324,12 @@ class _GenesisHomeState extends ConsumerState<GenesisHome> {
                   title: const Text('Buttons Lab'),
                   subtitle: const Text('أزرار وتفاعلات Flutter'),
                   onTap: () => context.go('/buttons-lab'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.text_fields),
+                  title: const Text('Inputs & Forms Lab'),
+                  subtitle: const Text('النصوص والمدخلات والفورم'),
+                  onTap: () => context.go('/inputs-lab'),
                 ),
                 const Divider(),
                 for (final item in [
