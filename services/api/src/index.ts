@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import { createAiGateway } from "@genesis-ai/ai-gateway";
 import { rateLimit, clientKey } from "./security.js";
 import { initDatabase, dbHealth, getDatabase } from "./database/db.js";
-import { signup, login, logout, authenticateToken, bearer } from "./auth.js";
+import { signup, login, guest, logout, authenticateToken, bearer } from "./auth.js";
 import { saveMission, listPersistedMissions, saveMemory, listPersistedMemories, deletePersistedMemory, saveChat, getChats, createChat, appendChatMessages, getChatMessages } from "./persistence.js";
 import { runSelfDevelopment } from "@genesis-ai/ai-gateway";
 import { buildWorkerCapabilities, createBuildJob, getBuildJob } from "./build-worker-client.js";
@@ -26,6 +26,7 @@ const server=createServer(async(request,response)=>{
  try{
   const url=new URL(request.url??"/","http://localhost");
   if(!rateLimit(clientKey(request)))return sendJson(response,429,{error:"Too many requests"});
+  if(url.pathname==="/v1/auth/guest"&&request.method==="POST"){return sendJson(response,201,await guest());}
   if(url.pathname==="/v1/auth/signup"&&request.method==="POST"){const b=await readJson(request);if(typeof b.email!=="string"||typeof b.password!=="string")return sendJson(response,400,{error:"email and password are required"});return sendJson(response,201,await signup(b.email,b.password,typeof b.displayName==="string"?b.displayName:undefined));}
   if(url.pathname==="/v1/auth/login"&&request.method==="POST"){const b=await readJson(request);if(typeof b.email!=="string"||typeof b.password!=="string")return sendJson(response,400,{error:"email and password are required"});return sendJson(response,200,await login(b.email,b.password));}
   if(url.pathname==="/v1/auth/logout"&&request.method==="POST"){const t=bearer(request.headers.authorization);if(!t)return sendJson(response,401,{error:"Authentication required"});return sendJson(response,200,{ok:await logout(t)});}
