@@ -1,42 +1,19 @@
-# Dependencies
-node_modules/
-.pnpm-store/
-.yarn/
-.npm/
-
-# Environment and secrets
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-
-# Build output
-dist/
-build/
-coverage/
-.tmp/
-.cache/
-
 # Flutter / Dart
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
 .packages
-.pub-cache/
 .pub/
 build/
-ios/Pods/
-ios/.symlinks/
-android/.gradle/
-android/local.properties
-
-# IDE
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
 .idea/
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+.vscode/
+*.iml
 
-# OS
-.DS_Store
-Thumbs.db
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/.idea/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/

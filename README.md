@@ -1,25 +1,15 @@
-# Genesis AI
+# Genesis AI — Flutter Base
 
-Genesis AI is a phone-first, multi-model AI platform with chat, AI routing, agents, coding tools, web research, files, creative tools, projects, memory, and external integrations.
+هذا المستودع هو نقطة بداية نظيفة لتطبيق Flutter.
 
-## Repository layout
+## البناء
 
-- `apps/mobile` — Flutter mobile client
-- `apps/web` — web client/admin surface
-- `services/api` — authenticated API gateway
-- `services/ai-gateway` — provider routing and model adapters
-- `packages/types` — shared TypeScript contracts
-- `docs` — architecture and implementation notes
-- `.github/workflows` — CI
+يتم تجهيز مشروع Android وتشغيل Flutter Build تلقائيًا عبر GitHub Actions.
 
-## Provider secrets
+المسار الرئيسي للتطبيق:
+- `apps/mobile`
 
-The repository is public, so provider credentials must never be committed.
-
-Configured GitHub repository secret names:
-
-- `aliz` — OpenRouter
-- `alizx` — Together AI
-- `alizc` — Replicate
-
-Their values must remain inside GitHub/deployment secret storage. The mobile app must never contain these credentials.
+الهدف الحالي:
+- Flutter فقط كأساس نظيف.
+- Android APK عبر GitHub Actions.
+- لا توجد ملفات Genesis القديمة أو خدمات إضافية في هذا الأساس.
