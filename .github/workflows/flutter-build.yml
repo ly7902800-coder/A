@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,9 +23,26 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Android project files
+      - name: Generate complete Flutter platform scaffold
         working-directory: apps/mobile
-        run: flutter create --platforms=android --project-name genesis_ai --org com.genesisai .
+        run: |
+          flutter create \
+            --platforms=android,ios,web,linux,macos,windows \
+            --project-name genesis_ai \
+            --org com.genesisai \
+            .
+
+      - name: Save generated Flutter scaffold to GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/mobile
+          if git diff --cached --quiet; then
+            echo "Flutter scaffold is already up to date."
+          else
+            git commit -m "chore: save complete Flutter project scaffold [skip ci]"
+            git push
+          fi
 
       - name: Get dependencies
         working-directory: apps/mobile
