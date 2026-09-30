@@ -22,20 +22,34 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Clone official Flutter SDK into repository
+        run: |
+          if [ -d flutter/.git ]; then
+            git -C flutter fetch --depth 1 origin stable
+            git -C flutter checkout stable
+            git -C flutter reset --hard origin/stable
+          else
+            git clone --depth 1 --branch stable https://github.com/flutter/flutter.git flutter
+          fi
+
+      - name: Add Flutter SDK to PATH
+        run: echo "$GITHUB_WORKSPACE/flutter/bin" >> "$GITHUB_PATH"
+
       - name: Generate complete Flutter platform scaffold
         working-directory: apps/mobile
         run: |
+          flutter doctor -v
           flutter create \
             --platforms=android,ios,web,linux,macos,windows \
             --project-name genesis_ai \
             --org com.genesisai \
             .
 
-      - name: Save generated Flutter scaffold to GitHub
+      - name: Save Flutter SDK and generated scaffold to GitHub
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/mobile
+          git add flutter apps/mobile
           if git diff --cached --quiet; then
             echo "Flutter scaffold is already up to date."
           else
