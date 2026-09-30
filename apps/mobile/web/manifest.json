@@ -1,0 +1,9 @@
+{
+  "name": "Genesis AI",
+  "short_name": "Genesis AI",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6750A4",
+  "description": "Genesis AI Flutter application."
+}
