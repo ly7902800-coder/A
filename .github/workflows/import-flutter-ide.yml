@@ -1,0 +1,149 @@
+name: Genesis AI - Import Flutter IDE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-and-brand:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout A
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Import Flutter IDE source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/ankurg132/flutter_ide.git /tmp/flutter_ide
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/flutter_ide/. .
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Brand as Genesis AI
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/^name: flutter_ide$/name: genesis_ai/' pubspec.yaml
+          sed -i 's/package:flutter_ide\//package:genesis_ai\//g' $(find lib -type f -name '*.dart')
+          grep -rl 'Flutter Demo' lib --include='*.dart' | xargs -r sed -i 's/Flutter Demo/Genesis AI/g'
+          grep -rl 'Flutter IDE' lib --include='*.dart' | xargs -r sed -i 's/Flutter IDE/Genesis AI/g'
+          mkdir -p assets
+          cat > assets/genesis_logo.svg <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0B0B0F"/>
+  <path d="M256 74c-76 0-138 62-138 138 0 47 24 91 63 116l-18 76 93-45 93 45-18-76c39-25 63-69 63-116 0-76-62-138-138-138Z" fill="none" stroke="#FFFFFF" stroke-width="28"/>
+  <path d="M190 235c18-36 44-54 78-54 31 0 54 13 69 38M185 282c21 26 46 39 75 39 30 0 55-13 75-39" fill="none" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round"/>
+  <text x="256" y="415" text-anchor="middle" fill="#FFFFFF" font-family="Arial,sans-serif" font-size="42" font-weight="700">GENESIS</text>
+</svg>
+SVG
+
+      - name: Generate Android platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --platforms=android --project-name genesis_ai .
+
+      - name: Add Genesis build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tool .github/workflows
+          cat > tool/genesis_doctor.sh <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+flutter --version
+dart --version
+flutter doctor -v
+flutter pub get
+flutter analyze
+SH
+          chmod +x tool/genesis_doctor.sh
+
+          cat > tool/genesis_build_apk.sh <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+flutter pub get
+flutter analyze
+flutter build apk --release
+echo "APK: build/app/outputs/flutter-apk/app-release.apk"
+SH
+          chmod +x tool/genesis_build_apk.sh
+
+          cat > .github/workflows/android-apk.yml <<'YAML'
+name: Genesis AI Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: genesis-ai-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+YAML
+
+          cat > GENESIS_BUILD_TOOLS.md <<'MD'
+# Genesis AI Build Tools
+
+This repository contains the Flutter IDE base plus Genesis AI branding and Android build automation.
+
+- `tool/genesis_doctor.sh` — environment/dependency/analyzer checks.
+- `tool/genesis_build_apk.sh` — local release APK build command.
+- `.github/workflows/android-apk.yml` — GitHub Actions APK build and artifact upload.
+
+The GitHub workflow uses the repository-scoped GITHUB_TOKEN with contents write only for this import workflow; GitHub documents that this token is automatically created for each workflow and its permissions can be explicitly limited.
+MD
+
+      - name: Commit imported project
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "Genesis AI Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Replace A with Flutter IDE base and Genesis AI build tools" || exit 0
+          git push origin HEAD:main
