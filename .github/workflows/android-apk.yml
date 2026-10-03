@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Genesis Android APK
 
 on:
   workflow_dispatch:
@@ -11,8 +11,12 @@ permissions:
 
 jobs:
   build-apk:
-    name: Build Flutter APK
+    name: Build Flutter Android APK
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile
 
     steps:
       - name: Checkout repository
@@ -25,13 +29,13 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Flutter version
+      - name: Verify Flutter
         run: flutter --version
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze project
+      - name: Analyze
         run: flutter analyze
         continue-on-error: true
 
@@ -42,6 +46,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: genesis-ai-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
