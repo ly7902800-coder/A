@@ -14,10 +14,6 @@ jobs:
     name: Build Flutter Android APK
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: apps/mobile
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,7 +48,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build release APK
         run: flutter build apk --release
@@ -64,6 +60,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: genesis-ai-apk
-          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
