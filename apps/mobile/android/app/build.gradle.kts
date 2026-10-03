@@ -28,10 +28,6 @@ android {
     }
 }
 
-kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_17.toString()
-}
-
 flutter {
     source = "../.."
 }
