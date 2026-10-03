@@ -159,50 +159,14 @@ jobs:
                     retention-days: 30
           YAML
 
-      - name: Commit imported project through GitHub Git API
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Commit imported project
         shell: bash
         run: |
           set -euo pipefail
-          repo="${GITHUB_REPOSITORY}"
-          branch="main"
-          api="repos/${repo}"
-          base_sha="$(gh api "${api}/git/ref/heads/${branch}" --jq '.object.sha')"
-          base_tree="$(gh api "${api}/commits/${base_sha}" --jq '.tree.sha')"
-          tmp="$(mktemp)"
-          trap 'rm -f "${tmp}"' EXIT
-
-          while IFS= read -r -d '' file; do
-            case "${file}" in
-              .git/*|.dart_tool/*|build/*|.idea/*) continue ;;
-            esac
-            path="${file#./}"
-            b64="$(base64 -w 0 "${file}")"
-            blob_sha="$(printf '%s' "${b64}" | gh api -X POST "${api}/git/blobs" \
-              -H 'Accept: application/vnd.github+json' \
-              -f encoding=base64 \
-              --raw-field content="${b64}" \
-              --jq '.sha')"
-            jq -cn --arg path "${path}" --arg sha "${blob_sha}" \
-              '{path:$path,mode:"100644",type:"blob",sha:$sha}' >> "${tmp}"
-          done < <(find . -type f -print0 | sort -z)
-
-          tree_json="$(jq -sc '{base_tree:"'"'${base_tree}'"'",tree:.}' "${tmp}")"
-          tree_sha="$(printf '%s' "${tree_json}" | gh api -X POST "${api}/git/trees" \
-            -H 'Accept: application/vnd.github+json' \
-            --input - --jq '.sha')"
-
-          commit_sha="$(gh api -X POST "${api}/git/commits" \
-            -H 'Accept: application/vnd.github+json' \
-            -f message='Import upstream Flutter IDE as Genesis AI' \
-            -f tree="${tree_sha}" \
-            -f "parents[]=${base_sha}" \
-            --jq '.sha')"
-
-          gh api -X PATCH "${api}/git/refs/heads/${branch}" \
-            -H 'Accept: application/vnd.github+json' \
-            -f sha="${commit_sha}" \
-            -F force=true
-
-          echo "Committed imported project: ${commit_sha}"
+          git config user.name "Genesis AI Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import upstream Flutter IDE as Genesis AI"
+          git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch origin main
+          git push --force origin HEAD:main
