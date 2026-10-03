@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf /tmp/flutter_ide
-          git clone --depth 1 https://github.com/ankurg132/flutter_ide.git /tmp/flutter_ide
+          git clone --depth 1 --branch main https://github.com/ankurg132/flutter_ide.git /tmp/flutter_ide
 
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/flutter_ide/. .
@@ -59,21 +59,11 @@ jobs:
           sed -i 's/^name: flutter_ide$/name: genesis_ai/' pubspec.yaml
           sed -i 's/^name: flutter_ide_demo$/name: genesis_ai/' pubspec.yaml
 
-          while IFS= read -r -d '' file; do
+          find lib test -type f -name '*.dart' -print0 | while IFS= read -r -d '' file; do
             sed -i 's/package:flutter_ide\//package:genesis_ai\//g' "$file"
-            sed -i 's/Flutter IDE/Genesis AI/g' "$file"
-            sed -i 's/Flutter Demo/Genesis AI/g' "$file"
-          done < <(find lib test -type f -name '*.dart' -print0)
+          done
 
-          mkdir -p assets
-          cat > assets/genesis_logo.svg <<'SVG'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0B0B0F"/>
-  <path d="M256 74c-76 0-138 62-138 138 0 47 24 91 63 116l-18 76 93-45 93 45-18-76c39-25 63-69 63-116 0-76-62-138-138-138Z" fill="none" stroke="#FFFFFF" stroke-width="28"/>
-  <path d="M190 235c18-36 44-54 78-54 31 0 54 13 69 38M185 282c21 26 46 39 75 39 30 0 55-13 75-39" fill="none" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round"/>
-  <text x="256" y="415" text-anchor="middle" fill="#FFFFFF" font-family="Arial,sans-serif" font-size="42" font-weight="700">GENESIS</text>
-</svg>
-SVG
+          sed -i "s/title: 'Flutter Demo'/title: 'Genesis AI'/" lib/main.dart
 
       - name: Generate Android project
         shell: bash
@@ -91,6 +81,7 @@ SVG
           set -euo pipefail
           test -f android/app/src/main/AndroidManifest.xml
           test -f android/settings.gradle
+          test -f android/app/build.gradle.kts
           flutter doctor -v
 
       - name: Install dependencies
@@ -233,6 +224,13 @@ build/app/outputs/flutter-apk/app-release.apk
 
 The APK is uploaded as the genesis-ai-apk workflow artifact.
 MD
+
+      - name: Set Android app label
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/android:label="flutter_ide"/android:label="Genesis AI"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="flutter_ide_demo"/android:label="Genesis AI"/' android/app/src/main/AndroidManifest.xml
 
       - name: Commit verified project
         shell: bash
