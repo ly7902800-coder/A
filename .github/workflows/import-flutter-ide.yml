@@ -169,5 +169,4 @@ jobs:
           git commit -m "Import upstream Flutter IDE as Genesis AI" || true
           git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          git push --force-with-lease origin HEAD:main
