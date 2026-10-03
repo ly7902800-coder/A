@@ -1,81 +1,14 @@
-name: Genesis Flutter Android
+name: Genesis Flutter Legacy Build
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
+  legacy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Clone official Flutter SDK into repository
-        run: |
-          if [ -d flutter/.git ]; then
-            git -C flutter fetch --depth 1 origin stable
-            git -C flutter checkout stable
-            git -C flutter reset --hard origin/stable
-          else
-            git clone --depth 1 --branch stable https://github.com/flutter/flutter.git flutter
-          fi
-
-      - name: Add Flutter SDK to PATH
-        run: echo "$GITHUB_WORKSPACE/flutter/bin" >> "$GITHUB_PATH"
-
-      - name: Generate complete Flutter platform scaffold
-        working-directory: apps/mobile
-        run: |
-          flutter doctor -v
-          flutter create \
-            --platforms=android,ios,web,linux,macos,windows \
-            --project-name genesis_ai \
-            --org com.genesisai \
-            .
-
-      - name: Save Flutter SDK and generated scaffold to GitHub
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add flutter apps/mobile
-          if git diff --cached --quiet; then
-            echo "Flutter scaffold is already up to date."
-          else
-            git commit -m "chore: save complete Flutter project scaffold [skip ci]"
-            git push
-          fi
-
-      - name: Get dependencies
-        working-directory: apps/mobile
-        run: flutter pub get
-
-      - name: Analyze
-        working-directory: apps/mobile
-        run: flutter analyze
-
-      - name: Test
-        working-directory: apps/mobile
-        run: flutter test
-
-      - name: Build APK
-        working-directory: apps/mobile
-        run: flutter build apk --release
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: genesis-ai-apk
-          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
+      - name: Legacy workflow disabled
+        run: echo "Legacy build workflow is disabled. Use Genesis Android APK."
