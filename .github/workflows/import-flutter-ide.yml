@@ -44,8 +44,12 @@ jobs:
           rm -rf /tmp/flutter_ide
           git clone --depth 1 --branch main https://github.com/ankurg132/flutter_ide.git /tmp/flutter_ide
 
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -path "./.github" -exec rm -rf {} +
           cp -a /tmp/flutter_ide/. .
+          mkdir -p .github/workflows
+          # Keep this importer workflow in place so the running job can finish safely.
+          cp "$GITHUB_WORKSPACE/.github/workflows/import-flutter-ide.yml" /tmp/import-flutter-ide.yml
+          cp /tmp/import-flutter-ide.yml .github/workflows/import-flutter-ide.yml
 
           test -f pubspec.yaml
           test -d lib
