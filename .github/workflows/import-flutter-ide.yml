@@ -1,4 +1,4 @@
-name: Genesis AI - Import and Verify Flutter IDE
+name: Genesis AI - Import Flutter IDE
 
 on:
   workflow_dispatch:
@@ -12,236 +12,156 @@ permissions:
 jobs:
   import-and-verify:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: "platform-tools"
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.47.2"
+          flutter-version: "3.47.6"
           channel: stable
           cache: true
 
-      - name: Import complete Flutter IDE source
+      - name: Replace repository with upstream Flutter IDE source
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/flutter_ide
           git clone --depth 1 --branch main https://github.com/ankurg132/flutter_ide.git /tmp/flutter_ide
 
-          # Preserve this workflow before replacing the repository contents.
-          cp .github/workflows/import-flutter-ide.yml /tmp/import-flutter-ide.yml
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          rm -rf -- ./* ./.??* 2>/dev/null || true
+          find . -mindepth 1 -maxdepth 1 -name .git -prune -o -exec rm -rf {} +
+
           cp -a /tmp/flutter_ide/. .
-          mkdir -p .github/workflows
-          cp /tmp/import-flutter-ide.yml .github/workflows/import-flutter-ide.yml
 
           test -f pubspec.yaml
-          test -d lib
           test -f lib/main.dart
+          test -f lib/editor_screen.dart
 
-      - name: Brand project as Genesis AI
+      - name: Apply only required identity changes
         shell: bash
         run: |
           set -euo pipefail
-
           sed -i 's/^name: flutter_ide$/name: genesis_ai/' pubspec.yaml
-          sed -i 's/^name: flutter_ide_demo$/name: genesis_ai/' pubspec.yaml
-
-          find lib test -type f -name '*.dart' -print0 | while IFS= read -r -d '' file; do
-            sed -i 's/package:flutter_ide\//package:genesis_ai\//g' "$file"
+          find lib test -type f -name '*.dart' -print0 | while IFS= read -r -d '' f; do
+            sed -i 's/package:flutter_ide\//package:genesis_ai\//g' "$f"
           done
-
           sed -i "s/title: 'Flutter Demo'/title: 'Genesis AI'/" lib/main.dart
 
-      - name: Generate Android project
+      - name: Generate Android platform only
         shell: bash
         run: |
           set -euo pipefail
-          flutter create \
-            --platforms=android \
-            --org com.genesisai \
-            --project-name genesis_ai \
-            .
+          flutter create --platforms=android --org com.genesisai --project-name genesis_ai .
 
-      - name: Verify Android configuration
+      - name: Fix Android application label only
         shell: bash
         run: |
           set -euo pipefail
-          test -f android/app/src/main/AndroidManifest.xml
-          test -f android/settings.gradle
-          test -f android/app/build.gradle.kts
-          flutter doctor -v
+          if [ -f android/app/src/main/AndroidManifest.xml ]; then
+            sed -i 's/android:label="[^"]*"/android:label="Genesis AI"/' android/app/src/main/AndroidManifest.xml
+          fi
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze Dart code
-        run: flutter analyze
-
-      - name: Run Flutter tests
-        run: flutter test
-
-      - name: Build release APK
-        run: flutter build apk --release
-
-      - name: Verify APK exists
+      - name: Verify source UI files
         shell: bash
         run: |
           set -euo pipefail
-          test -s build/app/outputs/flutter-apk/app-release.apk
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Add Genesis build tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p tool .github/workflows
-
-          cat > tool/genesis_doctor.sh <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-flutter --version
-dart --version
-flutter doctor -v
-flutter pub get
-flutter analyze
-SH
-          chmod +x tool/genesis_doctor.sh
-
-          cat > tool/genesis_build_apk.sh <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-flutter pub get
-flutter analyze
-flutter test
-flutter build apk --release
-echo "APK: build/app/outputs/flutter-apk/app-release.apk"
-SH
-          chmod +x tool/genesis_build_apk.sh
-
-          cat > .github/workflows/android-apk.yml <<'YAML'
-name: Genesis AI Android APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: "platform-tools"
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.47.2"
-          channel: stable
-          cache: true
-
-      - name: Verify toolchain
-        run: flutter doctor -v
-
-      - name: Get dependencies
-        run: flutter pub get
+          test -f lib/editor_screen.dart
+          test -f lib/file_tree.dart
+          test -f lib/flutter_sidebar.dart
+          test -f lib/output_panel.dart
+          test -f lib/pubdev_sidebar.dart
+          test -f lib/widgets/editor/activity_bar.dart
+          test -f lib/widgets/editor/editor_tabs.dart
+          test -f lib/widgets/editor/quick_open_dialog.dart
+          test -f lib/widgets/editor/status_bar.dart
+          test -f lib/widgets/editor/welcome_screen.dart
+          test -f lib/widgets/git/git_sidebar.dart
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter pub get && flutter analyze
 
       - name: Test
         run: flutter test
 
-      - name: Build release APK
+      - name: Build APK
         run: flutter build apk --release
 
       - name: Verify APK
-        shell: bash
         run: test -s build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: genesis-ai-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 30
-YAML
-
-          cat > GENESIS_BUILD_TOOLS.md <<'MD'
-# Genesis AI Build Tools
-
-Genesis AI uses a cloud-provisioned Flutter and Android build environment.
-
-## Toolchain
-
-- Flutter 3.47.2 stable
-- Dart bundled with Flutter
-- JDK 17
-- Android SDK command-line tools
-- Android platform-tools
-- Gradle wrapper generated by Flutter
-- Android Gradle Plugin generated by Flutter
-
-## Checks
-
-- tool/genesis_doctor.sh
-- tool/genesis_build_apk.sh
-
-## APK
-
-GitHub Actions builds:
-build/app/outputs/flutter-apk/app-release.apk
-
-The APK is uploaded as the genesis-ai-apk workflow artifact.
-MD
-
-      - name: Set Android app label
+      - name: Create permanent APK workflow
         shell: bash
         run: |
           set -euo pipefail
-          sed -i 's/android:label="flutter_ide"/android:label="Genesis AI"/' android/app/src/main/AndroidManifest.xml
-          sed -i 's/android:label="flutter_ide_demo"/android:label="Genesis AI"/' android/app/src/main/AndroidManifest.xml
+          mkdir -p .github/workflows
+          cat > .github/workflows/android-apk.yml <<'YAML'
+          name: Genesis AI Android APK
 
-      - name: Commit verified project
+          on:
+            workflow_dispatch:
+            push:
+              branches:
+                - main
+
+          permissions:
+            contents: read
+
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+                - name: Set up JDK 17
+                  uses: actions/setup-java@v5
+                  with:
+                    distribution: temurin
+                    java-version: "17"
+                - name: Set up Android SDK
+                  uses: android-actions/setup-android@v4
+                  with:
+                    packages: "platform-tools"
+                - name: Set up Flutter
+                  uses: subosito/flutter-action@v2
+                  with:
+                    flutter-version: "3.47.6"
+                    channel: stable
+                    cache: true
+                - name: Get dependencies
+                  run: flutter pub get
+                - name: Analyze
+                  run: flutter analyze
+                - name: Test
+                  run: flutter test
+                - name: Build release APK
+                  run: flutter build apk --release
+                - name: Verify APK
+                  run: test -s build/app/outputs/flutter-apk/app-release.apk
+                - name: Upload APK
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: genesis-ai-apk
+                    path: build/app/outputs/flutter-apk/app-release.apk
+                    if-no-files-found: error
+                    retention-days: 30
+          YAML
+
+      - name: Commit imported project
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "Genesis AI Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Import and verify Genesis AI Flutter IDE" || exit 0
+          git commit -m "Import upstream Flutter IDE as Genesis AI" || exit 0
           git push origin HEAD:main
