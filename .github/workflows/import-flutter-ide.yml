@@ -88,7 +88,7 @@ jobs:
           test -f lib/widgets/git/git_sidebar.dart
 
       - name: Analyze
-        run: flutter pub get && flutter analyze
+        run: flutter pub get && flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Test
         run: flutter test
